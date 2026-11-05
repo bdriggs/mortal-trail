@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mortal Trail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0907;--panel:#14100c;--ink:#ece2c9;--dim:#9c8f75;--blood:#c3171d;--gold:#e6b422;--green:#7fd36b;--line:#3a2f22}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'VT323',monospace;font-size:22px;line-height:1.2}
+#wrap{max-width:980px;margin:0 auto;padding:10px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 2px 8px}
+header .logo{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--blood);text-shadow:2px 2px 0 #000;letter-spacing:1px}
+header .logo span{color:var(--gold)}
+header .right{display:flex;gap:10px;align-items:center;color:var(--dim);font-size:19px}
+.tbtn{font-family:'VT323',monospace;font-size:19px;background:#1d1711;color:var(--ink);border:2px solid var(--line);padding:2px 10px;cursor:pointer}
+.tbtn:hover{border-color:var(--gold)}
+#screen{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:3px solid var(--line)}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+#panel{border:3px solid var(--line);border-top:none;background:var(--panel);padding:12px 16px 16px;min-height:210px}
+#panel h2{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--gold);margin:4px 0 10px;line-height:1.5}
+#panel h2.red{color:var(--blood)}
+#panel p{margin:0 0 10px}
+.dim{color:var(--dim)} .gold{color:var(--gold)} .red{color:#ff4b4b} .grn{color:var(--green)}
+.cols{display:grid;grid-template-columns:1.15fr 1fr;gap:18px}
+@media(max-width:720px){.cols{grid-template-columns:1fr}}
+.opts{display:flex;flex-direction:column;gap:6px}
+button.opt{font-family:'VT323',monospace;font-size:22px;text-align:left;background:#1d1711;color:var(--ink);border:2px solid var(--line);padding:5px 10px;cursor:pointer;line-height:1.1}
+button.opt:hover,button.opt:focus-visible{border-color:var(--gold);color:#fff;outline:none;background:#2a2016}
+button.opt .k{color:var(--gold);margin-right:8px}
+button.opt[disabled]{opacity:.38;cursor:default;border-color:var(--line);background:#1d1711;color:var(--ink)}
+button.opt.hot{border-color:var(--blood)}
+.note{border-left:4px solid var(--blood);padding:6px 10px;background:#1f0c0c;margin-bottom:10px}
+.note.good{border-color:var(--green);background:#0f1a0c}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;margin-bottom:10px}
+.stats b{color:var(--dim);font-weight:normal}
+.party{display:grid;gap:3px;margin-bottom:10px}
+.pm{display:grid;grid-template-columns:150px 1fr 96px;align-items:center;gap:8px}
+.pm .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm.dead{color:#6b5f4c;text-decoration:line-through}
+.hb{height:10px;background:#2a2016;border:1px solid #000}
+.hb i{display:block;height:100%}
+.st{font-size:18px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st.sick{color:#ff8a3a}
+.map{position:relative;height:30px;margin:4px 6px 12px}
+.map .track{position:absolute;left:0;right:0;top:14px;border-top:2px dashed #5a4a34}
+.map .done{position:absolute;left:0;top:13px;border-top:4px solid var(--gold)}
+.map .lm{position:absolute;top:9px;width:10px;height:10px;margin-left:-5px;background:#5a4a34;border:1px solid #000}
+.map .lm.boss{background:var(--blood);transform:rotate(45deg)}
+.map .lm.past{background:var(--gold)}
+.map .wg{position:absolute;top:-2px;margin-left:-8px;font-size:18px}
+.log{font-size:19px;color:var(--dim);min-height:60px;margin-bottom:10px}
+.log div:last-child{color:var(--ink)}
+table.store{width:100%;border-collapse:collapse;margin-bottom:10px}
+table.store td{padding:3px 6px;border-bottom:1px solid #2a2016}
+table.store td.q{text-align:center;width:150px;white-space:nowrap}
+table.store button{font-family:'VT323';font-size:22px;width:30px;background:#1d1711;color:var(--gold);border:2px solid var(--line);cursor:pointer}
+table.store button:hover{border-color:var(--gold)}
+.champs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+@media(max-width:720px){.champs{grid-template-columns:repeat(2,1fr)}}
+.champ{background:#1d1711;border:2px solid var(--line);padding:8px;cursor:pointer;font-family:'VT323';font-size:20px;color:var(--ink);text-align:left}
+.champ.sel{border-color:var(--gold);background:#2a2016}
+.champ b{display:block;color:var(--gold);font-weight:normal;font-size:22px}
+input.nm{font-family:'VT323';font-size:22px;background:#0b0907;color:var(--ink);border:2px solid var(--line);padding:4px 8px;width:100%}
+input.nm:focus{outline:none;border-color:var(--gold)}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+kbd{font-family:'VT323';background:#2a2016;border:1px solid #5a4a34;padding:0 5px;color:var(--gold)}
+.ctrl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:20px}
+#touch{position:absolute;inset:0;pointer-events:none;display:none}
+#touch.on{display:block}
+#touch .pad{position:absolute;bottom:6px;display:flex;gap:6px;pointer-events:auto}
+#touch .l{left:6px}#touch .r{right:6px}
+#touch button{width:46px;height:40px;font-family:'Press Start 2P';font-size:11px;background:rgba(20,16,12,.55);color:#fff;border:2px solid rgba(230,180,34,.6);border-radius:6px;touch-action:none;user-select:none;-webkit-user-select:none}
+footer{color:#5a4f40;font-size:17px;text-align:center;padding:8px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div class="logo">MORTAL <span>TRAIL</span></div>
+    <div class="right"><span id="best"></span><button class="tbtn" id="snd">Sound: on</button></div>
+  </header>
+  <div id="screen">
+    <canvas id="cv"></canvas>
+    <div id="touch">
+      <div class="pad l"><button data-k="L">◀</button><button data-k="D">▼</button><button data-k="U">▲</button><button data-k="R">▶</button></div>
+      <div class="pad r"><button data-k="P">P</button><button data-k="K">K</button><button data-k="S">S</button></div>
+    </div>
+  </div>
+  <div id="panel"></div>
+  <footer>A parody mash-up of covered-wagon survival and arcade fighting. All characters are original. Keys 1–9 pick options · Space continues · M mutes.</footer>
+</div>
+<script>
+"use strict";
+// ======================================================================
+// Core setup
+// ======================================================================
+const W=384,H=216,GY=192,FS=1.45;
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+cv.width=W;cv.height=H;ctx.imageSmoothingEnabled=false;
+const panel=document.getElementById('panel');
+const Rn=(a,b)=>a+Math.random()*(b-a);
+const RI=(a,b)=>Math.floor(Rn(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+let FLASHCOL=null;
+
+// ======================================================================
+// Audio (synthesised, no files)
+// ======================================================================
+let AC=null,muted=false;
+function audio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});}
+function tone(f,d,type='square',v=.07,slide=0,delay=0){if(muted||!AC)return;try{const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02);}catch(e){}}
+function noise(d,v=.15,freq=800,delay=0){if(muted||!AC)return;try{const t=AC.currentTime+delay,n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),ch=b.getChannelData(0);for(let i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource();s.buffer=b;const fl=AC.createBiquadFilter();fl.type='bandpass';fl.frequency.value=freq;fl.Q.value=.8;const g=AC.createGain();g.gain.value=v;s.connect(fl).connect(g).connect(AC.destination);s.start(t);}catch(e){}}
+const SFX={
+ hit:()=>{noise(.12,.35,500);tone(110,.09,'square',.06,-50);},
+ block:()=>{tone(1100,.04,'square',.04);noise(.04,.1,3000);},
+ whoosh:()=>noise(.07,.07,2400),
+ special:()=>tone(260,.28,'sawtooth',.05,520),
+ ko:()=>tone(220,.7,'sawtooth',.09,-180),
+ fatal:()=>{noise(.9,.45,250);tone(70,1,'square',.09,-30);},
+ fight:()=>{tone(196,.14,'square',.07);tone(392,.3,'square',.07,0,.14);},
+ coin:()=>{tone(988,.07,'square',.05);tone(1319,.14,'square',.05,0,.07);},
+ bad:()=>tone(160,.45,'triangle',.08,-90),
+ good:()=>{tone(523,.1,'triangle',.07);tone(659,.1,'triangle',.07,0,.1);tone(784,.2,'triangle',.07,0,.2);},
+ sel:()=>tone(660,.05,'square',.03),
+ zap:()=>{noise(.3,.4,4000);tone(1500,.25,'sawtooth',.05,-1300);},
+ finish:()=>{tone(110,.5,'sawtooth',.08,40);tone(82,.7,'square',.06,0,.15);},
+ fatalVoice:()=>{tone(98,.35,'sawtooth',.09);tone(73,.35,'sawtooth',.09,0,.33);tone(55,.8,'sawtooth',.09,-10,.66);}
+};
+
+// ======================================================================
+// Drawing primitives (crisp pixels)
+// ======================================================================
+function px(c,x,y,w,h,col){c.fillStyle=FLASHCOL||col;c.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)));}
+function line(c,x0,y0,x1,y1,w,col){c.fillStyle=FLASHCOL||col;const dx=x1-x0,dy=y1-y0,n=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))));const o=Math.floor(w/2);for(let i=0;i<=n;i++)c.fillRect(Math.round(x0+dx*i/n)-o,Math.round(y0+dy*i/n)-o,w,w);}
+function circ(c,cx,cy,r,col){c.fillStyle=FLASHCOL||col;for(let y=-r;y<=r;y++){const w=Math.round(Math.sqrt(Math.max(0,r*r-y*y)));c.fillRect(Math.round(cx-w),Math.round(cy+y),w*2||1,1);}}
+const _sh={};
+function shade(h,k){const key=h+k;if(_sh[key])return _sh[key];const n=parseInt(h.slice(1),16);const r=Math.min(255,Math.round(((n>>16)&255)*k)),g=Math.min(255,Math.round(((n>>8)&255)*k)),b=Math.min(255,Math.round((n&255)*k));return _sh[key]=`rgb(${r},${g},${b})`;}
+function txt(c,s,x,y,size,col,align='center',sh='#000'){c.font=`${size}px "Press Start 2P", monospace`;c.textAlign=align;c.textBaseline='middle';if(sh){c.fillStyle=sh;const o=Math.max(1,Math.round(size/8));c.fillText(s,x+o,y+o);}c.fillStyle=col;c.fillText(s,x,y);}
+function bands(c,cols,y0,y1){const h=(y1-y0)/cols.length;cols.forEach((col,i)=>px(c,0,y0+i*h,W,h+1,col));}
+function srand(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+
+// ======================================================================
+// Game data
+// ======================================================================
+const CHAMPS=[
+ {key:'josiah',name:'Iron Josiah',title:'Blacksmith from Missouri',money:700,mult:2,power:1.2,speed:.9,
+  col:{skin:'#d39a68',shirt:'#7a5a3a',pants:'#3b3226',apron:'#5a3a1e',hair:'#2a1a10',beard:'#2a1a10'},
+  special:{name:'Hammer Rush',type:'dash',dmg:14,cd:2.6},
+  fatal:{name:'Anvil From Heaven',seq:['D','D','K'],kind:'anvil'},
+  perk:'Can patch a broken wagon without spare parts half the time.'},
+ {key:'hattie',name:'Widow Hattie',title:'Frontier Herbalist',money:550,mult:2.5,power:1,speed:1.05,
+  col:{skin:'#f0c8a0',shirt:'#24222c',pants:'#24222c',dress:'#24222c',hat:'bonnet',hatCol:'#4a4658',hair:'#7a4a2a'},
+  special:{name:'Hex Flask',type:'proj',dmg:12,cd:2.2,pk:'flask',color:'#7fd36b',speed:190},
+  fatal:{name:'Witch-Brew Melt',seq:['B','F','S'],kind:'melt'},
+  perk:'Medicine always cures and heals extra.'},
+ {key:'ezekiel',name:'Brother Ezekiel',title:'Hellfire Preacher',money:900,mult:1.5,power:1.1,speed:.95,
+  col:{skin:'#b97f52',shirt:'#17171c',pants:'#17171c',hat:'flat',hatCol:'#0e0e10',collar:'#f0f0f0'},
+  special:{name:'Brimstone',type:'proj',dmg:13,cd:2.4,pk:'fire',color:'#ff7a1a',speed:170},
+  fatal:{name:'Smite',seq:['F','F','S'],kind:'smite'},
+  perk:'Hard days cost the party half as much health.'},
+ {key:'cutter',name:'Cutter Malone',title:'Riverboat Gambler',money:1500,mult:1,power:.85,speed:1.2,
+  col:{skin:'#e8b88f',shirt:'#efe9da',vest:'#9b1c24',pants:'#2b2b33',hat:'bowler',hatCol:'#1c1c1c',mustache:'#1a1a1a'},
+  special:{name:'Ace Toss',type:'proj',dmg:9,cd:1.4,pk:'card',color:'#ffffff',speed:260},
+  fatal:{name:"Dead Man's Hand",seq:['B','B','P'],kind:'slice'},
+  perk:'Starts rich, and can bluff his way past road agents.'},
+];
+const FOES={
+ bandit:{name:'Road Agent',rig:'human',hp:70,power:.8,speed:.9,aggr:.5,block:.25,col:{skin:'#c99a6e',shirt:'#8a6a3a',pants:'#4a3a2a',hat:'cowboy',hatCol:'#5a3d22',mask:'#a3222a'},special:{type:'proj',dmg:8,cd:3.4,pk:'knife',speed:220}},
+ jumper:{name:'Claim Jumper',rig:'human',hp:85,power:.95,speed:.85,aggr:.6,block:.3,col:{skin:'#d4a07a',shirt:'#5b6b7a',pants:'#3a3326',hat:'miner',hatCol:'#7a6a3a',beard:'#8a7a6a'},special:{type:'dash',dmg:11,cd:3.4}},
+ snakeoil:{name:'Doc Venom',rig:'human',hp:75,power:.85,speed:1.05,aggr:.5,block:.35,col:{skin:'#e8c0a0',shirt:'#5a2a6a',pants:'#2a1a2a',hat:'top',hatCol:'#1a1a1a',mustache:'#222'},special:{type:'proj',dmg:10,cd:2.6,pk:'bottle',speed:180}},
+ wolf:{name:'Gray Wolf',rig:'beast',size:'small',kind:'wolf',hp:60,power:.8,speed:1.3,aggr:.75,block:0,col:{body:'#86868a',dark:'#55555a',eye:'#ffd23a'},special:{type:'dash',dmg:9,cd:2.4}},
+ bison:{name:'Bison Bull',rig:'beast',size:'big',kind:'bison',hp:105,power:1.05,speed:.75,aggr:.45,block:0,col:{body:'#5a3a22',dark:'#3a2414',horn:'#e8e0c8',eye:'#111'},special:{type:'dash',dmg:15,cd:3}},
+ grizzly:{name:'Grizzly',rig:'beast',size:'big',kind:'bear',hp:115,power:1.15,speed:.8,aggr:.6,block:0,col:{body:'#6b4423',dark:'#43290f',eye:'#111'},special:{type:'dash',dmg:14,cd:3.2}},
+ wraith:{name:'Fever Wraith',rig:'ghost',hp:80,power:.9,speed:1,aggr:.55,block:.2,blood:'#7cff8a',col:{body:'#6fe07c',dark:'#2f8a3a',eye:'#ffffff'},special:{type:'proj',dmg:10,cd:2.5,pk:'miasma',speed:120}},
+ varney:{name:'Gentleman Jack Varney',boss:true,rig:'human',scale:1.12,hp:135,power:1.05,speed:1.05,aggr:.65,block:.45,col:{skin:'#e3b48c',shirt:'#e8e2d0',vest:'#1f3a5a',pants:'#202028',hat:'top',hatCol:'#202028',mustache:'#3a2010'},special:{type:'proj',dmg:12,cd:2,pk:'bullet',speed:320}},
+ scratch:{name:'Old Scratch',boss:true,rig:'beast',size:'huge',kind:'bear',hp:170,power:1.3,speed:.85,aggr:.62,block:0,col:{body:'#3e2a1a',dark:'#22150a',eye:'#ff2a2a'},special:{type:'dash',dmg:18,cd:2.6}},
+ dysentery:{name:'LORD DYSENTERY',boss:true,rig:'ghost',big:true,scale:1.35,hp:200,power:1.25,speed:.95,aggr:.7,block:.35,blood:'#8a7a2a',col:{body:'#8f8033',dark:'#4a3a12',eye:'#ff3030',crown:'#e6b422'},special:{type:'proj',dmg:14,cd:1.8,pk:'bile',speed:170}},
+};
+const MARKS=[
+ {n:'Independence, Missouri',m:0,t:'town'},
+ {n:'Kansas River Crossing',m:102,t:'river',depth:[2.2,4.8],width:[600,700],ferry:5},
+ {n:'Big Blue River',m:185,t:'river',depth:[1.4,3.8],width:[200,300]},
+ {n:'Fort Kearney',m:304,t:'fort'},
+ {n:'Chimney Rock',m:554,t:'rock',desc:'A spire of clay and sandstone rises 300 feet from the plain. Emigrants carve their names at its base.'},
+ {n:'Fort Laramie',m:640,t:'fort'},
+ {n:'Independence Rock',m:830,t:'rock',desc:'A great granite whale of a rock. Arrive by the Fourth of July, they say, or you will meet the snows.'},
+ {n:'South Pass',m:932,t:'pass',boss:'varney'},
+ {n:'Fort Bridger',m:989,t:'fort'},
+ {n:'Soda Springs',m:1151,t:'rock',desc:'Bubbling springs that taste like beer gone flat. Your oxen are not impressed.'},
+ {n:'Fort Hall',m:1208,t:'fort'},
+ {n:'Snake River Crossing',m:1390,t:'river',depth:[4,7],width:[900,1100],guide:25},
+ {n:'Fort Boise',m:1504,t:'fort'},
+ {n:'Blue Mountains',m:1680,t:'mtn',boss:'scratch'},
+ {n:'The Dalles',m:1828,t:'town',boss:'dysentery'},
+ {n:'Willamette Valley, Oregon',m:1907,t:'end'},
+];
+const TOTAL=1907;
+const DISEASES=['dysentery','cholera','typhoid','measles','mountain fever','the ague'];
+const NAMES=['Ada','Silas','Mae','Jedediah','Clara','Amos','Eliza','Hiram','Ruth','Obadiah','Nell','Cyrus','Tillie','Ezra','Lottie','Wendell','Josie','Abner','Pearl','Thaddeus'];
+const PACE=['steady','strenuous','grueling'],RAT=['filling','meager','bare bones'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TIPS=[
+ "A trapper spits: \"Gentleman Jack Varney holds South Pass. Rest up before you face him, or pay his toll.\"",
+ "\"Old Scratch is the biggest grizzly in the Blue Mountains. They say he's et forty men and a piano.\"",
+ "A pale emigrant whispers: \"Lord Dysentery waits at The Dalles. He's what's been killin' all of us.\"",
+ "\"Out of medicine? Fight the fever wraith yourself. Beat it and the fever breaks.\"",
+ "\"Hold DOWN to block. Punch while blocking and you'll throw a rising uppercut.\"",
+ "\"When a foe staggers, you've got a few heartbeats to finish 'em proper. Every champion's got a killing art.\"",
+ "\"A grueling pace gets you there faster. If you live.\"",
+ "\"Ford a river deeper than three feet and you'll be fishing your flour out of it.\"",
+ "\"Hunting a bison is just a fistfight with dinner.\"",
+ "\"Kick from the air if they keep blocking low. Nobody blocks a boot to the face from above.\"",
+];
+
+// ======================================================================
+// State & helpers
+// ======================================================================
+let G=null,scene='title',sceneT=0,CUR=[],SEL=0,F=null,GRAVE=null;
+let best=0;try{best=+localStorage.getItem('mortalTrailBest')||0;}catch(e){}
+function showBest(){document.getElementById('best').textContent=best?`Best: ${best}`:'';}
+showBest();
+function leader(){return G.party.find(p=>p.alive);}
+function alive(){return G.party.filter(p=>p.alive);}
+function fmtDate(d){return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;}
+function log(s){G.log.push(s);if(G.log.length>30)G.log.shift();}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function hpCol(h){return h>66?'#7fd36b':h>40?'#e6b422':h>20?'#ff8a3a':'#c3171d';}
+function hpWord(h){return h>75?'good':h>50?'fair':h>25?'poor':'very poor';}
+
+function optsHTML(opts){CUR=opts;return `<div class="opts">${opts.map((o,i)=>`<button class="opt${o.hot?' hot':''}" data-i="${i}" ${o.dis?'disabled':''}><span class="k">${o.sp?'␣':i+1}.</span>${o.t}</button>`).join('')}</div>`;}
+function view(html,opts){panel.innerHTML=html+(opts?optsHTML(opts):'');if(!opts)CUR=[];}
+panel.addEventListener('click',e=>{audio();const b=e.target.closest('button[data-i]');if(!b||b.disabled)return;const o=CUR[+b.dataset.i];if(o){SFX.sel();o.f();}});
+
+// ======================================================================
+// Input
+// ======================================================================
+const KEYS={};let pressQ=[];
+const KMAP={ArrowLeft:'L',KeyA:'L',ArrowRight:'R',KeyD:'R',ArrowUp:'U',KeyW:'U',ArrowDown:'D',KeyS:'D',KeyJ:'P',KeyZ:'P',KeyK:'K',KeyX:'K',KeyL:'S',KeyC:'S'};
+document.addEventListener('keydown',e=>{
+ audio();
+ const inInput=e.target&&e.target.tagName==='INPUT';
+ if(scene==='fight'&&F&&KMAP[e.code]){e.preventDefault();const k=KMAP[e.code];if(!KEYS[k]||!e.repeat){if(!e.repeat)pressQ.push(k);}KEYS[k]=true;}
+ if(inInput){if(e.key==='Enter'&&CUR.length){const o=CUR.find(o=>o.sp)||CUR[0];o&&!o.dis&&o.f();}return;}
+ if(e.code==='KeyM'){toggleSound();return;}
+ if(scene==='select'&&(e.code==='ArrowLeft'||e.code==='ArrowRight')){e.preventDefault();SEL=(SEL+(e.code==='ArrowLeft'?3:1))%4;selectView();return;}
+ if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+ if(e.code==='Space'||e.code==='Enter'){if(scene==='fight'&&F&&F.phase!=='over')return;const o=CUR.find(o=>o.sp)||(e.code==='Enter'&&CUR.length===1?CUR[0]:null);if(o&&!o.dis){SFX.sel();o.f();}return;}
+ const m=/^Digit(\d)$|^Numpad(\d)$/.exec(e.code);
+ if(m){const n=+(m[1]||m[2])-1;const o=CUR[n];if(o&&!o.dis){SFX.sel();o.f();}}
+});
+document.addEventListener('keyup',e=>{if(KMAP[e.code])KEYS[KMAP[e.code]]=false;});
+window.addEventListener('blur',()=>{for(const k in KEYS)KEYS[k]=false;});
+const isTouch=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
+document.querySelectorAll('#touch button').forEach(b=>{
+ const k=b.dataset.k;
+ b.addEventListener('pointerdown',e=>{e.preventDefault();audio();KEYS[k]=true;pressQ.push(k);});
+ ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{KEYS[k]=false;}));
+});
+function toggleSound(){muted=!muted;document.getElementById('snd').textContent='Sound: '+(muted?'off':'on');}
+document.getElementById('snd').addEventListener('click',()=>{audio();toggleSound();});
+
+// ======================================================================
+// Fighter rendering
+// ======================================================================
+function humanPose(f,t){
+ const P={hip:[0,-22],neck:[0,-37],head:[1,-43],kB:[-3,-11],fB:[-6,0],kF:[4,-11],fF:[7,0],eB:[-2,-30],hB:[5,-33],eF:[6,-29],hF:[11,-33]};
+ const st=f.state,a=f.atk,br=Math.sin(t*4+(f.isPlayer?0:2))*.6;
+ P.neck[1]+=br*.5;P.head[1]+=br*.5;P.hB[1]+=br;P.hF[1]+=br;
+ if(st==='walk'){const w=Math.sin(f.walkT*11);P.kB=[-1-w*3,-11];P.fB=[-2-w*7,0];P.kF=[2+w*3,-11];P.fF=[3+w*7,0];P.hip=[0,-22-Math.abs(w)];}
+ if(st==='block'){P.hip=[0,-19];P.kB=[-5,-9];P.fB=[-7,0];P.kF=[5,-10];P.fF=[6,0];P.neck=[1,-34];P.head=[1,-40];P.eB=[5,-29];P.hB=[8,-38];P.eF=[8,-27];P.hF=[10,-36];}
+ if(st==='jump'||(!f.onGround&&!a&&st!=='hit')){P.kB=[-1,-16];P.fB=[-5,-8];P.kF=[6,-18];P.fF=[4,-9];P.eB=[-4,-33];P.hB=[-4,-40];P.eF=[7,-36];P.hF=[12,-40];}
+ if(st==='hit'){P.neck=[-3,-36];P.head=[-5,-41];P.eB=[-7,-30];P.hB=[-10,-36];P.eF=[-1,-28];P.hF=[2,-22];}
+ if(st==='dizzy'){const w=Math.sin(t*5)*2;P.neck=[w,-36];P.head=[w*1.5,-42];P.eB=[-4,-28];P.hB=[-5,-21];P.eF=[4,-28];P.hF=[5,-21];}
+ if(st==='win'){P.eF=[5,-44];P.hF=[6,-53];P.eB=[-4,-30];P.hB=[-3,-24];}
+ if(a){const ph=atkPhase(f);
+  switch(a.kind){
+   case 'punch':if(ph===0){P.eF=[2,-31];P.hF=[4,-34];}else if(ph===1){P.eF=[12,-34];P.hF=[21,-35];P.neck=[3,-37];P.head=[4,-43];}else{P.eF=[9,-31];P.hF=[14,-34];}break;
+   case 'kick':P.neck=[-3,-36];P.head=[-4,-42];if(ph===0){P.kF=[6,-18];P.fF=[4,-10];}else if(ph===1){P.hip=[0,-23];P.kF=[11,-20];P.fF=[24,-24];}else{P.kF=[8,-15];P.fF=[10,-6];}break;
+   case 'upper':if(ph===0){P.hip=[0,-17];P.neck=[2,-31];P.head=[3,-37];P.kB=[-5,-8];P.kF=[6,-8];P.eF=[6,-22];P.hF=[8,-17];}else if(ph===1){P.neck=[2,-38];P.head=[3,-44];P.eF=[8,-42];P.hF=[11,-53];}else{P.eF=[7,-38];P.hF=[9,-46];}break;
+   case 'jkick':P.kF=[8,-16];P.fF=[20,-14];P.kB=[-3,-14];P.fB=[-7,-8];P.eB=[-5,-32];P.hB=[-9,-36];break;
+   case 'jpunch':P.kB=[-1,-16];P.fB=[-5,-8];P.kF=[6,-18];P.fF=[4,-9];P.eF=[10,-36];P.hF=[19,-30];break;
+   case 'dash':P.neck=[6,-35];P.head=[8,-40];P.eF=[13,-31];P.hF=[22,-31];P.kB=[-6,-9];P.fB=[-12,0];P.kF=[7,-12];P.fF=[9,0];break;
+   case 'cast':if(ph===0){P.eF=[-4,-36];P.hF=[-8,-42];P.neck=[-1,-37];}else{P.eF=[9,-36];P.hF=[18,-38];P.neck=[3,-37];P.head=[4,-43];}break;
+  }}
+ return P;
+}
+function drawHuman(c,f,bx,by,t){
+ const d=f.def,col=d.col,s=f.scale,fc=f.facing,ghost=d.rig==='ghost';
+ const P=humanPose(f,t);
+ const X=p=>bx+p[0]*fc*s,Y=p=>by+p[1]*s;
+ const L=(a,b,w,cl)=>line(c,X(a),Y(a),X(b),Y(b),Math.max(1,Math.round(w*s)),cl);
+ const rect=(lx,ly,w,h,cl)=>{const x=fc>0?bx+lx*s:bx-(lx+w)*s;px(c,x,by+ly*s,w*s,h*s,cl);};
+ const skin=col.skin||shade(col.body,1.15),shirt=col.shirt||col.body,pants=col.pants||col.dark||'#333';
+ const sh=[P.neck[0],P.neck[1]+2];
+ const boot='#1a120c';
+ if(ghost)c.globalAlpha=.9;
+ if(!ghost){L(P.hip,P.kB,4,shade(pants,.72));L(P.kB,P.fB,4,shade(pants,.72));rect(P.fB[0]-1,P.fB[1]-2,5,2,boot);}
+ L(sh,P.eB,3,shade(shirt,.72));L(P.eB,P.hB,3,shade(shirt,.72));rect(P.hB[0]-1,P.hB[1]-1,3,3,shade(skin,.8));
+ if(ghost){for(let i=0;i<11;i++){const w=Math.max(2,(d.big?14:10)-i);const off=Math.sin(t*6+i*.7)*1.6;rect(P.hip[0]-w/2+off,P.hip[1]+i*2,w,2,shade(col.body,1-i*.05));}}
+ else{L(P.hip,P.kF,4,pants);L(P.kF,P.fF,4,pants);rect(P.fF[0]-1,P.fF[1]-2,5,2,boot);}
+ if(col.dress){for(let y=Math.round(P.hip[1])-3;y<-1;y++){const w=8+(y-P.hip[1])*.55;rect(P.hip[0]-w/2,y,w,1,col.dress);}}
+ L(P.hip,P.neck,d.big?13:8,shirt);
+ if(d.big)rect(P.neck[0]+1,P.neck[1]+6,9,10,shade(col.body,1.1));
+ if(col.vest){L(P.hip,P.neck,8,col.vest);L([P.hip[0]+2,P.hip[1]],[P.neck[0]+2,P.neck[1]],2,shirt);}
+ if(col.apron){L([P.hip[0]+2,P.hip[1]+4],[P.neck[0]+2,P.neck[1]+5],5,col.apron);}
+ if(col.collar)rect(P.neck[0]-1,P.neck[1]-1,4,2,col.collar);
+ // head
+ const hx=P.head[0],hy=P.head[1];
+ if(col.hat==='bonnet'){rect(hx-5,hy-7,10,12,col.hatCol);rect(hx-1,hy-4,5,8,skin);rect(hx+3,hy-7,2,10,shade(col.hatCol,1.3));rect(hx+2,hy-2,1,1,'#120c08');}
+ else{
+  rect(hx-4,hy-5,8,9,skin);
+  if(ghost){rect(hx+1,hy-2,2,2,col.eye);rect(hx-2,hy-2,2,2,col.eye);rect(hx,hy+1,3,2,col.dark);}
+  else rect(hx+2,hy-2,1,1,'#120c08');
+  if(col.hair){rect(hx-4,hy-6,8,2,col.hair);rect(hx-4,hy-5,2,5,col.hair);}
+  if(col.beard)rect(hx-1,hy+1,5,3,col.beard);
+  if(col.mustache)rect(hx+1,hy+1,3,1,col.mustache);
+  if(col.mask)rect(hx-1,hy,6,4,col.mask);
+  switch(col.hat){
+   case 'cowboy':rect(hx-7,hy-6,14,2,col.hatCol);rect(hx-4,hy-10,8,4,col.hatCol);rect(hx-4,hy-7,8,1,shade(col.hatCol,.6));break;
+   case 'top':rect(hx-6,hy-6,12,1,col.hatCol);rect(hx-4,hy-15,8,9,col.hatCol);rect(hx-4,hy-8,8,1,'#7a1a1a');break;
+   case 'bowler':rect(hx-6,hy-6,12,1,col.hatCol);rect(hx-4,hy-9,8,3,col.hatCol);rect(hx-3,hy-10,6,1,col.hatCol);break;
+   case 'flat':rect(hx-8,hy-6,16,1,col.hatCol);rect(hx-4,hy-8,8,2,col.hatCol);break;
+   case 'miner':rect(hx-5,hy-8,10,3,col.hatCol);rect(hx+4,hy-7,2,2,'#ffe066');break;
+  }
+  if(col.crown){rect(hx-5,hy-8,10,3,col.crown);rect(hx-5,hy-11,2,3,col.crown);rect(hx-1,hy-12,2,4,col.crown);rect(hx+3,hy-11,2,3,col.crown);rect(hx-1,hy-7,2,1,'#c3171d');}
+ }
+ L(sh,P.eF,3,shirt);L(P.eF,P.hF,3,shirt);
+ const fist=f.atk&&atkPhase(f)===1?4:3;rect(P.hF[0]-1,P.hF[1]-1,fist,fist,skin);
+ if(f.atk&&f.atk.kind==='dash'&&d.key==='josiah'){L(P.hF,[P.hF[0]+2,P.hF[1]-9],2,'#6a4a2a');rect(P.hF[0]-1,P.hF[1]-13,8,5,'#9a9aa2');}
+ if(f.atk&&f.atk.kind==='dash'&&d.col.hat==='miner'){L(P.hF,[P.hF[0]+3,P.hF[1]-8],2,'#6a4a2a');rect(P.hF[0]-2,P.hF[1]-10,10,2,'#9a9aa2');}
+ c.globalAlpha=1;
+}
+const BSZ={small:{L:28,B:9,leg:9,hw:9,hh:7},big:{L:38,B:15,leg:11,hw:12,hh:10},huge:{L:50,B:21,leg:14,hw:15,hh:13}};
+function drawBeast(c,f,bx,by,t){
+ const d=f.def,col=d.col,z=BSZ[d.size],s=f.scale,fc=f.facing;
+ const rect=(lx,ly,w,h,cl)=>{const x=fc>0?bx+lx*s:bx-(lx+w)*s;px(c,x,by+ly*s,w*s,h*s,cl);};
+ const L=(a,b,w,cl)=>line(c,bx+a[0]*fc*s,by+a[1]*s,bx+b[0]*fc*s,by+b[1]*s,Math.max(1,Math.round(w*s)),cl);
+ const walk=f.state==='walk'?Math.sin(f.walkT*13):0;
+ const a=f.atk,ph=a?atkPhase(f):-1;
+ let hx=0,hy=0,jaw=0,lift=0,lean=0;
+ if(a){if(a.kind==='bite'){if(ph===0)hx=-3;else if(ph===1){hx=7;jaw=1;}else hx=2;}
+  if(a.kind==='swipe'){if(ph===0){lift=1;hy=-2;}else if(ph===1){lift=2;hx=3;jaw=1;}}
+  if(a.kind==='dash'){hx=5;hy=3;lean=1;jaw=1;}}
+ if(f.state==='hit'){hx=-4;hy=-2;}
+ if(f.state==='dizzy'){hy=Math.sin(t*5)*2;hx=Math.cos(t*5);}
+ const top=-z.leg-z.B,x0=-z.L/2;
+ if(d.kind==='wolf')L([x0+1,top+2],[x0-8,top-3+walk],3,col.body);else L([x0+1,top+3],[x0-3,top+8],1,col.dark);
+ const lg=(lx,dir,dark)=>{const sw=walk*3*dir+(lean?(dir>0?4:-4):0);rect(lx+sw,-z.leg,4,z.leg,dark?col.dark:col.body);rect(lx+sw,-2,4,2,'#1a120c');};
+ lg(x0+3,1,true);lg(z.L/2-9,-1,true);
+ rect(x0,top,z.L,z.B,col.body);
+ if(d.kind==='bison'){rect(z.L*.05,top-5,z.L*.42,z.B+5,col.dark);}
+ if(d.kind==='bear'){rect(z.L*.05,top-4,z.L*.35,5,col.body);}
+ rect(x0+2,top+z.B-3,z.L-4,3,col.dark);
+ lg(x0+7,-1,false);
+ if(lift){L([z.L/2-6,top+z.B-2],[z.L/2+5+lift*3,top+3-lift*3],4,col.body);rect(z.L/2+5+lift*3,top+1-lift*3,3,3,'#e8e0c8');}
+ else lg(z.L/2-5,1,false);
+ const low=d.kind==='bison'?5:0;
+ const hX=z.L/2-3+hx,hY=top-2+hy+low;
+ rect(hX,hY,z.hw,z.hh,d.kind==='bison'?col.dark:col.body);
+ rect(hX+z.hw-1,hY+z.hh*.35,Math.ceil(z.hw*.45),Math.ceil(z.hh*.5),d.kind==='wolf'?col.body:shade(col.body,.7));
+ rect(hX+z.hw+Math.ceil(z.hw*.45)-2,hY+z.hh*.35,2,2,'#111');
+ rect(hX+z.hw-4,hY+2,2,2,col.eye);
+ if(d.kind==='wolf'){rect(hX+1,hY-4,2,4,col.body);rect(hX+4,hY-3,2,3,col.dark);}
+ if(d.kind==='bear'){rect(hX,hY-2,3,3,col.body);rect(hX+5,hY-2,3,3,col.body);}
+ if(d.kind==='bison'){rect(hX+3,hY-3,2,3,col.horn);rect(hX+1,hY-5,3,2,col.horn);}
+ if(jaw){rect(hX+z.hw-1,hY+z.hh-1,Math.ceil(z.hw*.5),3,'#a01818');rect(hX+z.hw,hY+z.hh-1,1,1,'#fff');rect(hX+z.hw+2,hY+z.hh-1,1,1,'#fff');}
+}
+function drawFighterAt(c,f,x,y,t){
+ const st=f.state;
+ if(st==='ko'){
+  const p=clamp(f.kot/.45,0,1);
+  c.save();
+  if(f.def.rig==='beast'){const z=BSZ[f.def.size];const cy=y-(z.leg+z.B)/2*f.scale;c.translate(x,cy);c.rotate(Math.PI*p*f.facing);c.translate(-x,-cy);}
+  else{c.translate(x,y);c.rotate(-f.facing*Math.PI/2*p);c.translate(-x,-y);}
+  if(f.def.rig==='beast')drawBeast(c,f,x,y,t);else drawHuman(c,f,x,y,t);
+  c.restore();return;
+ }
+ if(f.def.rig==='beast')drawBeast(c,f,x,y,t);
+ else if(f.def.rig==='ghost')drawHuman(c,f,x,y-4-Math.sin(t*3)*2,t);
+ else drawHuman(c,f,x,y,t);
+}
+
+// ======================================================================
+// Fight engine
+// ======================================================================
+const ATK={
+ punch:{su:.05,ac:.08,rc:.12,reach:16,y:[28,42],dmg:6,kb:60,stun:.22},
+ kick:{su:.1,ac:.1,rc:.2,reach:22,y:[14,34],dmg:9,kb:110,stun:.3},
+ upper:{su:.08,ac:.1,rc:.3,reach:14,y:[26,56],dmg:12,kb:70,stun:.55,launch:-300},
+ jkick:{su:.04,ac:9,rc:0,reach:18,y:[4,30],dmg:9,kb:100,stun:.3,air:true},
+ jpunch:{su:.04,ac:9,rc:0,reach:16,y:[10,40],dmg:7,kb:80,stun:.25,air:true},
+ dash:{su:.12,ac:.3,rc:.25,reach:12,y:[4,44],dmg:0,kb:170,stun:.45},
+ cast:{su:.16,ac:.05,rc:.25,reach:0,y:[0,0]},
+ bite:{su:.08,ac:.1,rc:.16,reach:16,y:[2,40],dmg:7,kb:70,stun:.25},
+ swipe:{su:.15,ac:.12,rc:.25,reach:22,y:[2,44],dmg:11,kb:120,stun:.35},
+};
+function makeFighter(def,x,facing,isPlayer,mul=1){
+ const s=(def.scale||1)*mul;let hw=8,h=46;
+ if(def.rig==='beast'){const z=BSZ[def.size];hw=z.L/2;h=z.leg+z.B+4;}
+ if(def.big){hw=10;}
+ return{def,x,y:GY,vx:0,vy:0,facing,isPlayer,hp:def.hp,maxHp:def.hp,shownHp:def.hp,state:'idle',atk:null,cd:0,scale:s,hw:hw*s,h:h*s,walkT:0,stun:0,kot:0,ai:{t:.6,mode:'idle',hold:0},onGround:true,flash:0,hidden:false};
+}
+function atkPhase(f){const a=f.atk,d=a.d;if(a.t<d.su)return 0;if(d.air)return f.onGround?2:1;if(a.t<d.su+d.ac)return 1;return 2;}
+function startAtk(f,kind){f.atk={kind,d:ATK[kind],t:0,hit:false,spawned:false};f.state='atk';if(kind!=='cast')SFX.whoosh();if(f.onGround&&kind!=='dash')f.vx*=.3;}
+function special(f){const sp=f.def.special;if(!sp||f.cd>0)return;f.cd=sp.cd;startAtk(f,sp.type==='dash'?'dash':'cast');if(sp.type==='dash')SFX.special();}
+function hurtbox(f){const h=f.state==='block'?f.h*.85:f.h;return{x0:f.x-f.hw,x1:f.x+f.hw,y0:f.y-h,y1:f.y};}
+function tryHit(att,def){
+ const a=att.atk,d=a.d,s=att.scale;
+ const xa=att.x+att.facing*att.hw*.2,xb=att.x+att.facing*(att.hw+d.reach*s);
+ const hb={x0:Math.min(xa,xb),x1:Math.max(xa,xb),y0:att.y-d.y[1]*s,y1:att.y-d.y[0]*s};
+ const hu=hurtbox(def);
+ if(hb.x0<hu.x1&&hb.x1>hu.x0&&hb.y0<hu.y1&&hb.y1>hu.y0){
+  a.hit=true;
+  const dmg=(a.kind==='dash'?att.def.special.dmg:d.dmg)*att.def.power;
+  applyHit(att,def,dmg,d.kb,d.stun,d.launch||0,att.x);
+ }
+}
+function applyHit(att,def,dmg,kb,stun,launch,srcX){
+ if(!F||def.state==='ko'||F.phase==='over'||F.phase==='fatality'||F.phase==='intro')return;
+ const dir=def.x>=srcX?1:-1;
+ if(F.phase==='finish'){
+  if(def===F.foe){def.state='ko';def.kot=0;def.vx=dir*90;SFX.hit();SFX.ko();blood(def,18,dir);F.shake=.2;endFight('win',false);}
+  return;
+ }
+ const blocking=def.state==='block'&&def.facing===-dir;
+ if(blocking){dmg*=.15;def.vx=dir*kb*.45;SFX.block();F.fx.push({x:def.x-dir*def.hw,y:def.y-def.h*.7,t:0,col:'#fff'});}
+ else{
+  def.state='hit';def.atk=null;def.stun=stun;def.vx=dir*kb;
+  if(launch){def.vy=launch;def.onGround=false;}
+  SFX.hit();blood(def,dmg,dir);F.shake=Math.max(F.shake,.08+dmg*.006);def.flash=.08;F.hitstop=.045;
+  if(att===F.pl){F.combo=F.comboOpen?F.combo+1:1;F.comboOpen=true;if(F.combo>=3){F.comboTxt=`${F.combo} HIT COMBO`;F.comboT=1.1;}}
+ }
+ def.hp=Math.max(0,def.hp-dmg);
+ if(def.hp<=0){
+  if(def===F.foe){F.phase='finish';F.ft=5;def.state='dizzy';def.atk=null;def.vx=0;F.proj=[];F.msg=F.foe.def.rig==='beast'?'FINISH IT!':'FINISH THEM!';F.msgT=99;SFX.finish();F.inputs=[];}
+  else{def.state='ko';def.kot=0;def.atk=null;F.foe.state='win';F.foe.atk=null;SFX.ko();endFight('lose',false);}
+ }
+}
+function blood(f,amt,dir){
+ const col=f.def.blood||'#c3171d';const n=Math.round(4+amt*1.4);
+ for(let i=0;i<n;i++)F.parts.push({x:f.x+Rn(-4,4),y:f.y-f.h*Rn(.45,.85),vx:dir*Rn(20,140)+Rn(-30,30),vy:Rn(-170,-30),life:Rn(.6,1.4),col:Math.random()<.4?shade(col,.65):col,sz:Math.random()<.3?2:1,stick:true});
+}
+function spawnProj(f){
+ const sp=f.def.special;const y=f.y-(f.def.rig==='beast'?f.h*.6:32*f.scale);
+ F.proj.push({x:f.x+f.facing*(f.hw+6),y,vx:f.facing*(sp.speed||200),owner:f,dmg:sp.dmg*f.def.power,pk:sp.pk,col:sp.color,t:0});
+ SFX.special();
+}
+function aiInput(e,p,dt){
+ const inp={L:0,R:0,U:0,D:0,pr:new Set()};
+ if(F.phase!=='fight'||p.state==='ko'||e.state==='hit')return inp;
+ const A=e.ai,d=e.def;
+ const gap=Math.abs(p.x-e.x)-(p.hw+e.hw);
+ const tw=p.x>e.x?'R':'L',aw=tw==='R'?'L':'R';
+ A.t-=dt;
+ if(A.t<=0&&!e.atk){
+  A.t=Rn(.16,.4)*(1.3-d.aggr*.6);A.mode='idle';A.hold=0;
+  const threat=(p.atk&&gap<36&&atkPhase(p)<2)||F.proj.some(q=>q.owner===p&&Math.abs(q.x-e.x)<90&&Math.sign(e.x-q.x)===Math.sign(q.vx));
+  const r=Math.random();
+  if(threat&&d.block>0&&r<d.block+.15){A.mode='block';A.hold=Rn(.25,.5);}
+  else if(gap>16){
+   const sp=d.special;
+   if(e.cd<=0&&sp&&((sp.type==='proj'&&gap>50&&r<.35)||(sp.type==='dash'&&gap<120&&r<.3)))inp.pr.add('S');
+   else if(r<.07&&d.rig==='human'){inp.pr.add('U');A.mode='walk';A.hold=.45;}
+   else{A.mode='walk';A.hold=Rn(.2,.5);}
+  }else{
+   if(r<d.aggr){const q=Math.random();inp.pr.add(q<.45?'P':q<.82?'K':'UP');}
+   else if(r<d.aggr+.25){A.mode='back';A.hold=Rn(.15,.3);}
+  }
+ }
+ if(A.hold>0){A.hold-=dt;if(A.mode==='block')inp.D=1;else if(A.mode==='walk')inp[tw]=1;else if(A.mode==='back')inp[aw]=1;}
+ if(A.mode==='walk'&&!e.onGround)inp.pr.add(Math.random()<.5?'K':'');
+ return inp;
+}
+function act(f,inp,other){
+ if(['hit','ko','dizzy','win'].includes(f.state)||f.atk)return;
+ const pr=inp.pr,beast=f.def.rig==='beast';
+ if(f.onGround){
+  f.facing=other.x>f.x?1:-1;
+  if(pr.has('S')&&f.cd<=0){special(f);return;}
+  if(pr.has('UP')){startAtk(f,beast?'swipe':'upper');return;}
+  if(inp.D){if(pr.has('P')){startAtk(f,beast?'swipe':'upper');return;}f.state='block';f.vx=0;return;}
+  if(pr.has('P')){startAtk(f,beast?'bite':'punch');return;}
+  if(pr.has('K')){startAtk(f,beast?'swipe':'kick');return;}
+  const mv=(inp.R?1:0)-(inp.L?1:0);
+  const spd=96*f.def.speed;
+  f.vx=mv*spd*(mv===f.facing?1:.8);
+  f.state=mv?'walk':'idle';
+  if(pr.has('U')&&!beast){f.vy=-390;f.onGround=false;f.state='jump';}
+ }else if(!beast){
+  if(pr.has('K')){startAtk(f,'jkick');return;}
+  if(pr.has('P')){startAtk(f,'jpunch');return;}
+ }
+}
+function updFighter(f,inp,other,dt){
+ f.cd=Math.max(0,f.cd-dt);f.flash=Math.max(0,f.flash-dt);
+ if(f.state==='walk')f.walkT+=dt*(f.vx*f.facing>=0?1:-1);
+ if(f.state==='ko')f.kot+=dt;
+ if(f.state==='hit'){f.stun-=dt;if(f.stun<=0&&f.onGround){f.state='idle';if(f===F.foe)F.comboOpen=false;}}
+ if(f.atk){
+  const a=f.atk;a.t+=dt;const ph=atkPhase(f);
+  if(a.kind==='dash'&&ph===1)f.vx=f.facing*290*f.def.speed;
+  if(ph===1&&!a.hit&&a.kind!=='cast')tryHit(f,other);
+  if(a.kind==='cast'&&ph>=1&&!a.spawned){spawnProj(f);a.spawned=true;}
+  if(f.atk&&!a.d.air&&a.t>=a.d.su+a.d.ac+a.d.rc){f.atk=null;f.state='idle';}
+ }else act(f,inp,other);
+ // physics
+ if(!f.onGround){f.vy+=900*dt;f.y+=f.vy*dt;if(f.y>=GY){f.y=GY;f.vy=0;f.onGround=true;if(f.atk&&f.atk.d.air){f.atk=null;f.state='idle';}if(f.state==='jump')f.state='idle';if(f.state==='hit')f.stun=Math.max(f.stun,.15);}}
+ f.x+=f.vx*dt;
+ if(f.onGround&&f.state!=='walk'&&!(f.atk&&f.atk.kind==='dash'))f.vx*=Math.pow(.002,dt);
+ f.x=clamp(f.x,f.hw+2,W-f.hw-2);
+}
+function startFight(key,opts,cb){
+ const prog=G.miles/TOTAL;
+ const fd=JSON.parse(JSON.stringify(FOES[key]));
+ if(!fd.boss){fd.hp=Math.round(fd.hp*(1+prog*.5));fd.aggr=Math.min(.9,fd.aggr+prog*.15);fd.power*=1+prog*.2;}
+ if(opts.name)fd.name=opts.name;
+ const L=leader();
+ const pd=Object.assign({},G.champ,{name:L.name,hp:100,rig:'human'});
+ const startHp=Math.max(Math.round(L.hp),30);
+ const pl=makeFighter(pd,100,1,true,FS);pl.hp=pl.shownHp=startHp;
+ const foe=makeFighter(fd,290,-1,false,FS);
+ F={pl,foe,proj:[],parts:[],decals:[],fx:[],phase:'intro',t:0,clock:0,time:60,shake:0,hitstop:0,msg:'',msgT:0,combo:0,comboOpen:false,comboTxt:'',comboT:0,inputs:[],cb,opts,boost:startHp-Math.round(L.hp),bg:opts.bg||biome(),fat:null,result:null,fatal:false,flashScr:0};
+ for(const k in KEYS)KEYS[k]=false;pressQ=[];
+ buildBg(F.bg);scene='fight';
+ document.getElementById('touch').classList.toggle('on',isTouch);
+ fightPanel();
+}
+function fightPanel(){
+ const c=G.champ,arr={F:'→',B:'←',D:'↓',U:'↑',P:'Punch',K:'Kick',S:'Special'};
+ view(`<div class="cols"><div>
+ <h2 class="red">${esc(F.pl.def.name)} vs ${esc(F.foe.def.name)}</h2>
+ ${F.opts.intro?`<p>${F.opts.intro}</p>`:''}
+ ${F.boost>0?`<p class="dim">Adrenaline: ${esc(F.pl.def.name)} is badly hurt but fights on.</p>`:''}
+ <p class="gold">Your fatality — ${esc(c.fatal.name)}: ${c.fatal.seq.map(k=>`<kbd>${arr[k]}</kbd>`).join(' ')}<br><span class="dim">(→ means toward the enemy. Enter it while they stagger.)</span></p>
+ </div><div class="ctrl">
+ <kbd>← →</kbd><span>move (A / D)</span>
+ <kbd>↑</kbd><span>jump (W)</span>
+ <kbd>↓</kbd><span>block (S) — punch while blocking = uppercut</span>
+ <kbd>J</kbd><span>punch (or Z)</span>
+ <kbd>K</kbd><span>kick (or X)</span>
+ <kbd>L</kbd><span>special: ${esc(c.special.name)} (or C)</span>
+ </div></div>`);
+}
+function endFight(result,fatal){
+ F.phase='over';F.result=result;F.fatal=fatal;F.overT=0;
+ if(result==='win'){if(!fatal){F.msg=`${F.pl.def.name.toUpperCase()} WINS`;F.msgT=99;}F.pl.state=F.pl.onGround?'win':F.pl.state;F.pl.atk=null;}
+ else{F.msg=`${F.foe.def.name.toUpperCase()} WINS`;F.msgT=99;}
+ setTimeout(()=>{if(!F)return;
+  const won=result==='win';
+  view(`<h2 class="${won?'':'red'}">${won?(fatal?'FATALITY!':'Victory!'):'Defeated…'}</h2><p>${won?(fatal?`${esc(F.pl.def.name)} performs ${esc(G.champ.fatal.name)}. The trail will tell stories about this.`:`${esc(F.foe.def.name)} is beaten.`):`${esc(F.pl.def.name)} falls to ${esc(F.foe.def.name)}.`}</p>`,[{t:'Continue',sp:true,f:finishFight}]);
+ },fatal?600:1300);
+}
+function finishFight(){
+ if(!F)return;
+ const L=leader(),res=F.result,fatal=F.fatal,cb=F.cb;
+ if(res==='win'){L.hp=clamp(Math.round(F.pl.hp-F.boost),1,100);G.kills++;if(fatal)G.fatals++;}
+ else L.hp=Math.min(L.hp,10);
+ F=null;document.getElementById('touch').classList.remove('on');
+ scene='travel';cb(res==='win',fatal);
+}
+const SW=200,SH=170,SB=160;
+function startFatality(){
+ const foe=F.foe;F.phase='fatality';F.msg='';F.msgT=0;
+ const sc=document.createElement('canvas');sc.width=SW;sc.height=SH;const sx=sc.getContext('2d');
+ drawFighterAt(sx,foe,SW/2,SB,F.clock);
+ const ch=document.createElement('canvas');ch.width=SW;ch.height=SH;const cx=ch.getContext('2d');cx.drawImage(sc,0,0);cx.globalCompositeOperation='source-atop';cx.fillStyle='#161210';cx.fillRect(0,0,SW,SH);
+ F.fat={kind:G.champ.fatal.kind,t:0,stage:0,spr:sc,char:ch,top:Math.max(0,SB-foe.h-(foe.def.col.hat==='top'?14:6)*foe.scale)};
+ foe.hidden=true;F.pl.state='idle';F.pl.atk=null;F.pl.vx=0;
+ SFX.special();
+}
+function updFatality(dt){
+ const fa=F.fat,foe=F.foe,pl=F.pl;fa.t+=dt;const t=fa.t;
+ if(fa.kind==='anvil'&&fa.stage===0&&t>=.7){fa.stage=1;SFX.fatal();F.shake=.45;bloodBurst(foe.x,GY-6,90,0);}
+ if(fa.kind==='melt'){if(fa.stage===0&&t>=.5){fa.stage=1;SFX.fatal();F.shake=.2;}if(fa.stage===1&&t<2.6&&Math.random()<.6)F.parts.push({x:foe.x+Rn(-14,14),y:GY-Rn(0,8),vx:Rn(-10,10),vy:Rn(-60,-20),life:Rn(.3,.8),col:Math.random()<.5?'#7fd36b':'#b8ff9a',sz:2,stick:false});}
+ if(fa.kind==='smite'){
+  if(fa.stage===0&&t>=.3){fa.stage=1;SFX.zap();SFX.fatal();F.flashScr=.1;F.shake=.3;fa.bolt=.12;}
+  if(fa.stage===1&&t>=.7){fa.stage=2;SFX.zap();F.flashScr=.1;fa.bolt=.12;}
+  if(fa.stage===2&&t>=1.1){fa.stage=3;SFX.zap();F.flashScr=.12;fa.bolt=.15;F.shake=.3;}
+  if(fa.stage===3&&t>=1.9){fa.stage=4;try{const id=fa.char.getContext('2d').getImageData(0,0,SW,SH).data;for(let y=0;y<SH;y+=2)for(let x=0;x<SW;x+=2){if(id[(y*SW+x)*4+3]>100)F.parts.push({x:foe.x-SW/2+x,y:foe.y-SB+y,vx:Rn(-25,25)+15,vy:Rn(-40,10),life:Rn(.8,2),col:Math.random()<.5?'#2a2420':'#5a5048',sz:2,stick:true,ash:true});}}catch(e){}SFX.hit();}
+  if(fa.bolt)fa.bolt-=dt;
+ }
+ if(fa.kind==='slice'){if(fa.stage===0&&t>=.6){fa.stage=1;SFX.fatal();F.shake=.3;}
+  if(fa.stage===1&&t<2.2){const hgt=SB-fa.top;for(const k of[1,2]){const yy=foe.y-SB+fa.top+hgt*k/3;if(Math.random()<.5)F.parts.push({x:foe.x+Rn(-6,6),y:yy,vx:Rn(-60,60),vy:Rn(-160,-60),life:Rn(.5,1),col:'#c3171d',sz:1,stick:true});}}}
+ if(t>=3&&!fa.said){fa.said=true;F.msg='FATALITY';F.msgT=99;SFX.fatalVoice();}
+ if(t>=3.6&&F.phase==='fatality')endFight('win',true);
+}
+function bloodBurst(x,y,n,dir){const col=F.foe.def.blood||'#c3171d';for(let i=0;i<n;i++)F.parts.push({x:x+Rn(-10,10),y:y-Rn(0,10),vx:Rn(-160,160)+dir*60,vy:Rn(-260,-40),life:Rn(.6,1.6),col:Math.random()<.4?shade(col,.6):col,sz:Math.random()<.3?2:1,stick:true});}
+function updateFight(dt){
+ const f=F;f.clock+=dt;f.t+=dt;
+ if(f.shake>0)f.shake-=dt;if(f.flashScr>0)f.flashScr-=dt;if(f.comboT>0)f.comboT-=dt;
+ if(f.msgT>0&&f.msgT<90)f.msgT-=dt;
+ // particles always
+ for(const p of f.parts){p.life-=dt;if(p.stuck)continue;p.vy+=600*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y>=GY+Rn(0,8)&&p.vy>0){if(p.stick&&f.decals.length<500){f.decals.push({x:p.x,y:Math.min(H-2,p.y),col:p.col,sz:p.sz});}p.life=0;}}
+ f.parts=f.parts.filter(p=>p.life>0);
+ for(const x of f.fx)x.t+=dt;f.fx=f.fx.filter(x=>x.t<.25);
+ for(const fi of[f.pl,f.foe])fi.shownHp=fi.shownHp>fi.hp?Math.max(fi.hp,fi.shownHp-dt*90):fi.hp;
+ if(f.fat)updFatality(dt);
+ if(f.phase==='intro'){
+  if(f.t<1){f.msg='ROUND 1';f.msgT=99;}else if(f.t<1.8){if(f.msg!=='FIGHT!'){f.msg='FIGHT!';SFX.fight();}}else{f.phase='fight';f.msg='';f.msgT=0;}
+  pressQ=[];return;
+ }
+ if(f.hitstop>0){f.hitstop-=dt;return;}
+ const pl=f.pl,foe=f.foe;
+ // player input
+ const pr=new Set(pressQ);pressQ=[];
+ const inp={L:KEYS.L,R:KEYS.R,U:KEYS.U,D:KEYS.D,pr};
+ if(f.phase==='finish'){
+  for(const k of pr){const rel=k==='L'?(pl.facing>0?'B':'F'):k==='R'?(pl.facing>0?'F':'B'):k;f.inputs.push({k:rel,t:f.clock});}
+  f.inputs=f.inputs.filter(i=>f.clock-i.t<2.2).slice(-6);
+  const seq=G.champ.fatal.seq,n=seq.length,last=f.inputs.slice(-n).map(i=>i.k);
+  if(last.length===n&&last.every((k,i)=>k===seq[i])){startFatality();return;}
+  f.ft-=dt;if(f.ft<=0){foe.state='ko';foe.kot=0;SFX.ko();endFight('win',false);}
+ }
+ if(f.phase==='fight'){f.time-=dt;if(f.time<=0){f.time=0;if(pl.hp/pl.maxHp>=foe.hp/foe.maxHp){foe.hp=0;foe.state='ko';foe.kot=0;SFX.ko();endFight('win',false);}else{pl.state='ko';pl.kot=0;foe.state='win';endFight('lose',false);}}}
+ const canAct=f.phase==='fight'||f.phase==='finish';
+ updFighter(pl,canAct?inp:{pr:new Set()},foe,dt);
+ const ai=f.phase==='fight'?aiInput(foe,pl,dt):{pr:new Set()};
+ if(f.phase==='finish'&&foe.state!=='dizzy'&&foe.state!=='ko'){foe.state='dizzy';foe.atk=null;}
+ if(!foe.hidden)updFighter(foe,ai,pl,dt);
+ // separation
+ if(pl.state!=='ko'&&foe.state!=='ko'&&!foe.hidden&&Math.abs(pl.y-foe.y)<30){
+  const dx=foe.x-pl.x,minD=(pl.hw+foe.hw)*.8;
+  if(Math.abs(dx)<minD){const sg=dx===0?pl.facing:Math.sign(dx),push=(minD-Math.abs(dx))/2;pl.x-=sg*push;foe.x+=sg*push;
+   pl.x=clamp(pl.x,pl.hw+2,W-pl.hw-2);foe.x=clamp(foe.x,foe.hw+2,W-foe.hw-2);
+   if(Math.abs(foe.x-pl.x)<minD-1){if(foe.x<=foe.hw+3||foe.x>=W-foe.hw-3)pl.x=foe.x-sg*minD;else foe.x=pl.x+sg*minD;}}
+ }
+ // projectiles
+ for(const q of f.proj){q.x+=q.vx*dt;q.t+=dt;const tgt=q.owner===pl?foe:pl;if(q.dead||tgt.hidden)continue;
+  const hu=hurtbox(tgt);if(q.x>hu.x0-3&&q.x<hu.x1+3&&q.y>hu.y0&&q.y<hu.y1+2){q.dead=true;applyHit(q.owner,tgt,q.dmg,90,.32,0,q.x-q.vx*.05);}}
+ for(let i=0;i<f.proj.length;i++)for(let j=i+1;j<f.proj.length;j++){const a=f.proj[i],b=f.proj[j];if(a.owner!==b.owner&&!a.dead&&!b.dead&&Math.abs(a.x-b.x)<10&&Math.abs(a.y-b.y)<14){a.dead=b.dead=true;f.fx.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,t:0,col:'#ffe066'});SFX.block();}}
+ f.proj=f.proj.filter(q=>!q.dead&&q.x>-20&&q.x<W+20);
+}
+
+// ======================================================================
+// Backgrounds
+// ======================================================================
+let bgC=document.createElement('canvas');bgC.width=W;bgC.height=H;
+function biome(){return G.miles<640?'prairie':G.miles<1150?'plains':G.miles<1820?'mountains':'gorge';}
+const SKIES={
+ prairie:['#4a88c8','#5c98d2','#70a8da','#86b8e0','#9cc6e4','#b4d4e6','#cde0e2'],
+ plains:['#3f6aa6','#5a80b2','#7c93b4','#a6a6ac','#cfb294','#e6bd84','#f0c47a'],
+ mountains:['#2e4a7a','#3c5a8a','#4e6c9a','#6280aa','#7a94b8','#94a8c4','#b0bccc'],
+ gorge:['#3a3050','#5a3a5a','#7a4a5a','#a05a52','#c8704a','#e08a44','#f0a84a'],
+ night:['#07060f','#0c0a1a','#120f26','#181434','#1e1940','#241d48','#2a2150'],
+ hell:['#160204','#2a0408','#40060c','#5a0a10','#7a1014','#9a1a14','#c02a14'],
+};
+function ridge(c,seed,base,amp,col,freq){const r=srand(seed);const ph=[r()*6,r()*6,r()*6];for(let x=0;x<W;x++){const h=base-amp*(.5*Math.sin(x*freq+ph[0])+.3*Math.sin(x*freq*2.3+ph[1])+.2*Math.sin(x*freq*5.1+ph[2]));px(c,x,h,1,GY-h+1,col);}}
+function buildBg(b){
+ const c=bgC.getContext('2d');c.clearRect(0,0,W,H);
+ bands(c,SKIES[b],0,GY-30);px(c,0,GY-30,W,30,SKIES[b][SKIES[b].length-1]);
+ const r=srand(b.length*999);
+ if(b==='night'||b==='hell'){for(let i=0;i<60;i++)px(c,r()*W,r()*120,1,1,b==='night'?'#cfd6ff':'#ff8a5a');}
+ if(b==='night'){circ(c,300,40,12,'#e8e6d0');circ(c,295,37,12,'#0e0b1e');}
+ if(b==='prairie'){circ(c,320,40,10,'#fff2b0');ridge(c,3,GY-22,10,'#7aa060',.02);ridge(c,5,GY-10,6,'#5e8a46',.035);}
+ if(b==='plains'){circ(c,90,70,16,'#ffe2a0');ridge(c,7,GY-30,24,'#b0704a',.012);for(let i=0;i<3;i++){const x=40+i*130+r()*40;px(c,x,GY-62,40,40,'#9a5a3a');px(c,x-4,GY-64,48,4,'#8a4a2e');}ridge(c,9,GY-8,4,'#b89a5a',.04);}
+ if(b==='mountains'){ridge(c,11,GY-70,40,'#5a6a8a',.015);for(let x=0;x<W;x+=1){}ridge(c,13,GY-40,24,'#3e4e6a',.02);for(let i=0;i<24;i++){const x=r()*W,h=14+r()*14;for(let k=0;k<h;k++)px(c,x-k/3,GY-h+k,2*k/3+2,1,'#1e3a2a');}}
+ if(b==='gorge'){ridge(c,17,GY-60,30,'#5a3a4a',.02);px(c,0,GY-14,W,8,'#3a5a8a');for(let i=0;i<40;i++)px(c,r()*W,GY-13+r()*6,4,1,'#6a8aba');ridge(c,19,GY-6,3,'#4a3a2a',.05);}
+ if(b==='night'){ridge(c,21,GY-12,8,'#14122a',.03);for(let i=0;i<7;i++){const x=20+i*55+r()*20;px(c,x,GY-14,2,14,'#3a3448');px(c,x-4,GY-10,10,2,'#3a3448');}}
+ if(b==='hell'){circ(c,192,90,30,'#ff5a1a');circ(c,192,90,24,'#ffb04a');for(let i=0;i<9;i++){const x=r()*W,h=40+r()*70;for(let k=0;k<h;k++)px(c,x-k/6,GY-h+k,k/3+2,1,'#0e0204');}}
+ // ground
+ const gcol={prairie:'#6a8a3a',plains:'#a8844a',mountains:'#5a6a4a',gorge:'#5a4a3a',night:'#22202e',hell:'#2a0a08'}[b];
+ px(c,0,GY,W,H-GY,gcol);
+ for(let i=0;i<220;i++)px(c,r()*W,GY+r()*(H-GY),r()<.5?2:1,1,shade(gcol,r()<.5?.75:1.2));
+ px(c,0,GY,W,1,shade(gcol,1.25));
+ // wagon in background
+ if(b!=='hell'&&b!=='night')drawWagon(c,40,GY-2,0,false,.9);
+}
+
+// ======================================================================
+// Wagon & travel scene
+// ======================================================================
+function drawWagon(c,x,y,t,moving,k=1){
+ // oxen
+ for(let i=0;i<2;i++){const ox=x+44+i*20,w=moving?Math.sin(t*10+i):0;
+  px(c,ox,y-14,16,7,'#6a4a2e');px(c,ox+14,y-15,6,5,'#5a3a22');px(c,ox+18,y-16,2,2,'#e8e0c8');
+  for(let l=0;l<4;l++){px(c,ox+1+l*4+(l%2?w:-w)*1.5,y-7,2,7,'#4a3020');}}
+ line(c,x+34,y-10,x+46,y-10,1,'#3a2414');
+ // bed
+ px(c,x,y-14,36,8,'#7a4a24');px(c,x,y-14,36,1,'#9a6a3a');
+ // cover
+ for(let r=0;r<14;r++){const w=36-Math.max(0,r-9)*2;px(c,x+(36-w)/2,y-15-r,w,1,r%4===0?'#d8d0b8':'#efe8d4');}
+ for(let r=0;r<3;r++)px(c,x+4+r*13,y-28,1,14,'#c8bfa4');
+ // wheels
+ for(const wx of[x+6,x+29]){circ(c,wx,y-5,5,'#3a2414');circ(c,wx,y-5,3,'#7a4a24');const a=t*(moving?6:0);for(let s=0;s<3;s++){const an=a+s*Math.PI/3;line(c,wx-Math.cos(an)*4,y-5-Math.sin(an)*4,wx+Math.cos(an)*4,y-5+Math.sin(an)*4,1,'#3a2414');}}
+}
+function drawLandmark(c,m,lx){
+ const y=GY;
+ switch(m.t){
+  case 'fort':px(c,lx,y-34,70,34,'#7a5a34');for(let i=0;i<70;i+=4)px(c,lx+i,y-37,3,4,'#7a5a34');px(c,lx+28,y-18,14,18,'#3a2414');px(c,lx+60,y-58,1,24,'#ddd');px(c,lx+61,y-58,10,6,'#b22234');px(c,lx+61,y-58,4,3,'#3c3b6e');break;
+  case 'rock':px(c,lx+10,y-14,50,14,'#b08a5a');px(c,lx+22,y-34,26,20,'#a07a4a');px(c,lx+30,y-70,10,36,'#9a7244');px(c,lx+32,y-76,6,6,'#9a7244');break;
+  case 'river':px(c,lx,y,80,H-y,'#3a6aa8');for(let i=0;i<12;i++)px(c,lx+(i*17+sceneT*20)%76,y+3+(i%4)*5,6,1,'#7aa8e0');break;
+  case 'pass':case 'mtn':for(let k=0;k<60;k++)px(c,lx+k*.9,y-60+k,120-k*1.8,1,k<14?'#e8ecf4':'#5a6a8a');break;
+  case 'town':for(let i=0;i<4;i++){px(c,lx+i*22,y-18-(i%2)*6,18,18+(i%2)*6,['#8a6a4a','#7a5a3a','#9a7a5a','#6a4a2a'][i]);px(c,lx+i*22+6,y-8,5,8,'#2a1a0a');}break;
+  case 'end':px(c,lx,y-6,200,6,'#3a8a2a');px(c,lx+30,y-26,30,20,'#8a5a2a');for(let k=0;k<12;k++)px(c,lx+28+k,y-26-k,34-2*k,1,'#6a2a1a');break;
+ }
+}
+function drawTravel(t){
+ const b=biome(),sky=SKIES[b];
+ bands(ctx,sky,0,GY-30);px(ctx,0,GY-30,W,30,sky[sky.length-1]);
+ const off=G.scroll;
+ const far={prairie:'#7aa060',plains:'#b0704a',mountains:'#5a6a8a',gorge:'#5a3a4a'}[b];
+ const mid={prairie:'#5e8a46',plains:'#9a6a40',mountains:'#3e4e6a',gorge:'#4a3040'}[b];
+ const amp={prairie:8,plains:22,mountains:44,gorge:30}[b];
+ for(let x=0;x<W;x++){const X=x+off*.15;const h=GY-24-amp*(.5+.5*Math.sin(X*.013)*Math.cos(X*.0071)+.3*Math.sin(X*.041));px(ctx,x,h,1,GY-h,far);
+  if(b==='mountains'&&h<GY-24-amp*.8)px(ctx,x,h,1,4,'#e8ecf4');}
+ for(let x=0;x<W;x++){const X=x+off*.4;const h=GY-8-amp*.3*(.6+.4*Math.sin(X*.03)+.3*Math.sin(X*.07));px(ctx,x,h,1,GY-h,mid);}
+ const gcol={prairie:'#6a8a3a',plains:'#a8844a',mountains:'#5a6a4a',gorge:'#5a4a3a'}[b];
+ px(ctx,0,GY,W,H-GY,gcol);
+ for(let i=0;i<40;i++){const x=((i*53-off)%W+W)%W;px(ctx,x,GY+4+(i*7)%20,3,1,shade(gcol,.75));}
+ px(ctx,0,GY+6,W,6,shade(gcol,1.18));
+ const m=MARKS[G.next];if(m){const d=m.m-G.miles;if(d<80)drawLandmark(ctx,m,170+d*3);}
+ drawWagon(ctx,110,GY+10,t,G.moving);
+ if(G.moving)for(let i=0;i<3;i++)px(ctx,104-((t*40+i*9)%30),GY+6-((t*20+i*5)%6),2,2,'rgba(200,180,140,.6)');
+ // hud strip
+ px(ctx,0,0,W,14,'rgba(0,0,0,.55)');
+ txt(ctx,fmtDate(G.date),6,7,8,'#ece2c9','left',null);
+ txt(ctx,`${G.miles} MI`,W-6,7,8,'#e6b422','right',null);
+}
+
+// ======================================================================
+// Rendering
+// ======================================================================
+function drawFight(){
+ const f=F;ctx.save();
+ if(f.shake>0)ctx.translate(Math.round(Rn(-3,3)),Math.round(Rn(-2,2)));
+ ctx.drawImage(bgC,0,0);
+ for(const d of f.decals)px(ctx,d.x,d.y,d.sz+1,1,d.col);
+ // shadows
+ for(const fi of[f.pl,f.foe])if(!fi.hidden)px(ctx,fi.x-fi.hw,GY-1,fi.hw*2,2,'rgba(0,0,0,.3)');
+ const order=f.pl.atk?[f.foe,f.pl]:[f.pl,f.foe];
+ for(const fi of order){if(fi.hidden)continue;FLASHCOL=fi.flash>0?'#ffffff':null;drawFighterAt(ctx,fi,fi.x,fi.y,f.clock);FLASHCOL=null;
+  if(fi.state==='dizzy'){for(let i=0;i<3;i++){const a=f.clock*4+i*2.1;px(ctx,fi.x+Math.cos(a)*8,fi.y-fi.h-(fi.def.rig==='beast'?2:12)+Math.sin(a)*2,2,2,'#ffe066');}}}
+ if(f.fat)drawFatality();
+ for(const q of f.proj)drawProj(q);
+ for(const p of f.parts)px(ctx,p.x,p.y,p.sz,p.sz,p.col);
+ for(const x of f.fx){const r=2+x.t*24;px(ctx,x.x-r,x.y,r*2,1,x.col);px(ctx,x.x,x.y-r,1,r*2,x.col);}
+ ctx.restore();
+ if(f.flashScr>0)px(ctx,0,0,W,H,'rgba(255,255,255,.75)');
+ // HUD
+ const bar=(x,fi,right)=>{px(ctx,x-1,7,162,10,'#000');px(ctx,x,8,160,8,'#5a0a0a');const sw=160*fi.shownHp/fi.maxHp,w=160*fi.hp/fi.maxHp;
+  px(ctx,right?x+160-sw:x,8,sw,8,'#e6b422');px(ctx,right?x+160-w:x,8,w,8,'#3fbf3f');px(ctx,right?x+160-w:x,8,w,2,'#7fef6f');
+  txt(ctx,fi.def.name.toUpperCase(),right?x+160:x,24,8,'#ece2c9',right?'right':'left');};
+ bar(8,f.pl,false);bar(216,f.foe,true);
+ txt(ctx,String(Math.ceil(f.time)),W/2,13,8,'#ffffff');
+ const sp=G.champ.special,cdp=1-f.pl.cd/sp.cd;px(ctx,8,32,60,3,'#2a2016');px(ctx,8,32,60*cdp,3,cdp>=1?'#ff7a1a':'#7a5a3a');txt(ctx,cdp>=1?sp.name.toUpperCase():'',72,34,8,'#ff9a4a','left');
+ if(f.comboT>0)txt(ctx,f.comboTxt,8,50,8,'#ffe066','left');
+ if(f.msg){const big=f.msg==='FATALITY';const sz=big?24:f.msg.length>14?12:16;
+  const col=big?'#e01818':f.msg.startsWith('FINISH')?'#e01818':f.msg==='FIGHT!'?'#ffe066':'#ece2c9';txt(ctx,f.msg,W/2,big?90:84,sz,col);}
+ if(f.phase==='finish'){const w=Math.max(0,f.ft/5);px(ctx,W/2-40,104,80,3,'#2a0a0a');px(ctx,W/2-40,104,80*w,3,'#e01818');}
+}
+function drawProj(q){
+ const x=q.x,y=q.y,t=q.t;
+ switch(q.pk){
+  case 'flask':px(ctx,x-2,y-2,5,6,'#7fd36b');px(ctx,x-1,y-5,3,3,'#c9b38a');px(ctx,x-1,y-1,1,2,'#d8ffd0');break;
+  case 'fire':circ(ctx,x,y,4+Math.sin(t*30),'#ff6a1a');circ(ctx,x,y,2,'#ffe066');for(let i=1;i<4;i++)px(ctx,x-Math.sign(q.vx)*i*4,y+Rn(-2,2),2,2,'#ff9a3a');break;
+  case 'card':{const fl=Math.floor(t*20)%2;px(ctx,x-3,y-(fl?2:1),6,fl?4:2,'#fff');px(ctx,x,y,1,1,'#c3171d');break;}
+  case 'knife':line(ctx,x-4,y,x+4,y,1,'#d0d0d8');px(ctx,x-Math.sign(q.vx)*5,y-1,2,3,'#5a3a22');break;
+  case 'bottle':px(ctx,x-2,y-3,4,7,'#a04ad0');px(ctx,x-1,y-5,2,2,'#c9b38a');break;
+  case 'miasma':ctx.globalAlpha=.7;circ(ctx,x,y,5,'#5fcf6a');circ(ctx,x-Math.sign(q.vx)*5,y+2,3,'#3f9f4a');ctx.globalAlpha=1;break;
+  case 'bullet':px(ctx,x-1,y,3,2,'#ffe066');line(ctx,x-Math.sign(q.vx)*10,y,x,y,1,'rgba(255,255,255,.5)');break;
+  case 'bile':circ(ctx,x,y,5,'#8f8033');circ(ctx,x+1,y-1,2,'#c8b84a');px(ctx,x-Math.sign(q.vx)*6,y+3,2,3,'#6a5a20');break;
+  default:circ(ctx,x,y,3,q.col||'#fff');
+ }
+}
+function drawFatality(){
+ const fa=F.fat,foe=F.foe,pl=F.pl,t=fa.t,ox=foe.x-SW/2,oy=foe.y-SB;
+ if(fa.kind==='anvil'){
+  if(t<.7){ctx.drawImage(fa.spr,ox,oy);const ay=lerp(-30,oy+fa.top-12,(t/.7)*(t/.7));drawAnvil(foe.x,ay);}
+  else{ctx.drawImage(fa.spr,0,0,SW,SB,ox,foe.y-SB*.12,SW,SB*.12);drawAnvil(foe.x,GY-14-3);}
+ }else if(fa.kind==='melt'){
+  if(t<.5){ctx.drawImage(fa.spr,ox,oy);const p=t/.5;const x=lerp(pl.x,foe.x,p),y=lerp(pl.y-34,foe.y-30,p)-Math.sin(p*Math.PI)*30;px(ctx,x-2,y-2,5,6,'#7fd36b');}
+  else{const p=clamp((t-.5)/2,0,1),dy=p*(SB-fa.top);ctx.save();ctx.beginPath();ctx.rect(0,0,W,GY);ctx.clip();ctx.drawImage(fa.spr,ox,oy+dy);ctx.globalAlpha=.25+p*.6;ctx.drawImage(tint(fa.spr,'#5fcf4a'),ox,oy+dy);ctx.restore();ctx.globalAlpha=1;
+   const w=10+p*40;px(ctx,foe.x-w/2,GY-1,w,3,'#5fcf4a');px(ctx,foe.x-w/2+4,GY-2,w-8,1,'#9fff8a');}
+ }else if(fa.kind==='smite'){
+  if(t<.3)ctx.drawImage(fa.spr,ox,oy);else if(fa.stage<4){ctx.drawImage(fa.char,ox,oy);if(Math.floor(t*12)%2)px(ctx,foe.x+2*foe.facing,foe.y-foe.h+6,2,1,'#ff5a1a');}
+  if(fa.bolt>0){let x=foe.x+Rn(-6,6),y=0;while(y<foe.y-10){const nx=x+Rn(-8,8),ny=y+Rn(8,16);line(ctx,x,y,nx,ny,2,'#fffbe0');x=nx;y=ny;}}
+ }else if(fa.kind==='slice'){
+  const hgt=SB-fa.top,b1=fa.top+hgt/3,b2=fa.top+hgt*2/3;
+  if(t<.6){ctx.drawImage(fa.spr,ox,oy);for(let i=0;i<3;i++){const p=clamp(t/.6-i*.15,0,1);if(p>0&&p<1){const x=lerp(pl.x,foe.x,p);px(ctx,x-3,lerp(pl.y-34,oy+fa.top+hgt*(i+.5)/3,p),6,3,'#fff');}}}
+  else{const u=t-.6,fall=k=>Math.max(0,u-.4*k);const dir=-foe.facing;
+   const segs=[[fa.top-8,b1],[b1,b2],[b2,SB]];
+   segs.forEach(([a,b],i)=>{const dx=(2-i)*u*14*dir;const drop=Math.min(SB-b,250*fall(i===0?1:i===1?1.5:9)**2);ctx.drawImage(fa.spr,0,a,SW,b-a,ox+dx,oy+a+drop,SW,b-a);});
+   for(let i=0;i<5;i++)px(ctx,foe.x+Rn(-8,8),GY-1,2,1,'#c3171d');}
+ }
+}
+const _tint=new Map();
+function tint(src,col){if(_tint.has(src))return _tint.get(src);const c=document.createElement('canvas');c.width=src.width;c.height=src.height;const x=c.getContext('2d');x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';x.fillStyle=col;x.fillRect(0,0,c.width,c.height);_tint.set(src,c);return c;}
+function drawAnvil(x,y){px(ctx,x-9,y,18,4,'#4a4a52');px(ctx,x-5,y+4,10,5,'#3a3a42');px(ctx,x-8,y+9,16,5,'#4a4a52');px(ctx,x-13,y,4,2,'#4a4a52');px(ctx,x-9,y,18,1,'#7a7a84');}
+function drawTitle(t){
+ bands(ctx,['#12030a','#22050c','#3a0810','#5a0c14','#7e1418','#a2241a','#c8461c','#e2782a'],0,GY-20);
+ circ(ctx,W/2,GY-28,30,'#ffb04a');circ(ctx,W/2,GY-28,24,'#ffd47a');
+ ridge(ctx,4,GY-34,16,'#2a0608',.02);ridge(ctx,8,GY-16,8,'#180305',.03);
+ px(ctx,0,GY-16,W,H,'#0e0204');
+ // silhouettes
+ FLASHCOL='#050102';
+ const a=makeFighter(Object.assign({},CHAMPS[(Math.floor(t/3))%4],{rig:'human'}),W/2-56,1,true);a.state='block';a.y=GY-16;
+ const b=makeFighter(FOES[['bandit','wraith','varney','dysentery'][(Math.floor(t/3))%4]],W/2+56,-1,false);b.y=GY-16;
+ drawFighterAt(ctx,a,a.x,a.y,t);drawFighterAt(ctx,b,b.x,b.y,t);drawWagon(ctx,24,GY-14,t,false);
+ FLASHCOL=null;
+ txt(ctx,'MORTAL',W/2,44,32,'#e01818','center','#1a0000');
+ txt(ctx,'TRAIL',W/2,82,32,'#e6b422','center','#2a1400');
+ txt(ctx,'FIGHT OR DIE OF DYSENTERY',W/2,108,8,'#ece2c9');
+ if(Math.floor(t*2)%2)txt(ctx,'PRESS 1 TO HIT THE TRAIL',W/2,H-10,8,'#ffe066');
+}
+function drawSelect(t){
+ bands(ctx,['#0c0a14','#141020','#1c162c','#241c36','#2c2240'],0,GY);
+ px(ctx,0,GY,W,H-GY,'#1a1410');
+ txt(ctx,'CHOOSE YOUR CHAMPION',W/2,18,8,'#e6b422');
+ CHAMPS.forEach((c,i)=>{const x=60+i*88;const f=makeFighter(Object.assign({},c,{rig:'human'}),x,1,true);
+  if(i===SEL){f.state='win';px(ctx,x-24,40,48,GY-38,'rgba(230,180,34,.12)');px(ctx,x-24,40,48,1,'#e6b422');px(ctx,x-24,GY+1,48,1,'#e6b422');}
+  else f.state='idle';
+  drawFighterAt(ctx,f,x,GY-10,t+i);
+  txt(ctx,c.name.split(' ')[1].toUpperCase(),x,GY+12,8,i===SEL?'#ffe066':'#9c8f75');});
+}
+function drawGrave(t){
+ bands(ctx,['#1a1830','#2a2440','#3a2e4a','#5a3a50','#7a4a50','#9a5a4a'],0,GY);
+ px(ctx,0,GY,W,H-GY,'#3a3a24');ridge(ctx,31,GY-6,4,'#2a3a1e',.04);
+ const x=W/2;px(ctx,x-58,60,116,GY-60,'#7a7a72');px(ctx,x-50,52,100,10,'#7a7a72');px(ctx,x-42,46,84,8,'#7a7a72');px(ctx,x-58,60,4,GY-60,'#5a5a54');
+ txt(ctx,'HERE LIES',x,74,8,'#2a2a28',undefined,null);
+ txt(ctx,GRAVE.name.toUpperCase().slice(0,12),x,96,8,'#1a1a18',undefined,null);
+ txt(ctx,'DIED OF',x,124,8,'#2a2a28',undefined,null);
+ txt(ctx,GRAVE.cause.toUpperCase().slice(0,13),x,144,8,'#1a1a18',undefined,null);
+ for(let i=0;i<8;i++)px(ctx,x-60+i*15,GY-3,3,3,'#4a6a2a');
+}
+function drawEnd(t,won){
+ if(won){bands(ctx,['#3a6aa8','#5a88c0','#7aa6d0','#a0c0d8','#c8d8d0','#e8dcb0'],0,GY);circ(ctx,320,50,12,'#fff2b0');
+  ridge(ctx,41,GY-30,14,'#3a7a3a',.02);ridge(ctx,43,GY-12,6,'#4a9a3a',.04);px(ctx,0,GY,W,H-GY,'#4a8a2a');
+  drawLandmark(ctx,{t:'end'},240);drawWagon(ctx,40,GY+8,0,false);
+  alive().forEach((p,i)=>{const f=makeFighter(Object.assign({},G.champ,{rig:'human'}),110+i*24,1,true);f.state=i%2?'win':'idle';f.scale=.7;drawFighterAt(ctx,f,f.x,GY+6,t+i);});
+  txt(ctx,'OREGON!',W/2,30,16,'#e6b422');
+  if(Math.floor(t*3)%2)for(let i=0;i<20;i++){const a=i/20*Math.PI*2,r=(t*30)%40;px(ctx,90+Math.cos(a)*r,60+Math.sin(a)*r,2,2,['#ffe066','#ff5a5a','#7fd36b'][i%3]);}
+ }else{
+  bands(ctx,SKIES.night,0,GY);circ(ctx,300,40,12,'#e8e6d0');px(ctx,0,GY,W,H-GY,'#22202e');
+  G.party.forEach((p,i)=>{const x=50+i*70;px(ctx,x-10,GY-30,20,30,'#5a5a64');px(ctx,x-7,GY-34,14,4,'#5a5a64');txt(ctx,p.name.slice(0,7).toUpperCase(),x,GY+12,8,'#9c8f75');});
+  txt(ctx,'GAME OVER',W/2,60,16,'#e01818');
+ }
+}
+
+// ======================================================================
+// Main loop
+// ======================================================================
+let last=performance.now();
+const DAY=.55;
+function loop(now){
+ const dt=clamp((now-last)/1000,0,.05);last=now;sceneT+=dt;
+ try{
+  if(scene==='fight'&&F)updateFight(dt);
+  if(scene==='travel'&&G&&G.moving){G.scroll+=dt*60;G.acc+=dt;if(G.acc>=DAY){G.acc=0;const stop=dayTick();if(!stop&&scene==='travel')updTravelStats();}}
+  if(scene==='title')drawTitle(sceneT);
+  else if(scene==='select')drawSelect(sceneT);
+  else if(scene==='travel'&&G)drawTravel(sceneT);
+  else if(scene==='fight'&&F)drawFight();
+  else if(scene==='grave')drawGrave(sceneT);
+  else if(scene==='won')drawEnd(sceneT,true);
+  else if(scene==='over')drawEnd(sceneT,false);
+ }catch(e){console.error(e);}
+ requestAnimationFrame(loop);
+}
+
+// ======================================================================
+// Screens / flow
+// ======================================================================
+function titleView(){
+ scene='title';sceneT=0;
+ view(`<h2>Independence, Missouri — 1848</h2><p>Two thousand miles of prairie, river and mountain lie between you and Oregon's Willamette Valley. Most emigrants fear dysentery, bandits and grizzlies. You have a different plan: <span class="red">fight all of them.</span></p>`,
+ [{t:'Hit the trail',f:selectView,hot:true},{t:'How to play',f:helpView},{t:muted?'Turn sound on':'Turn sound off',f:()=>{toggleSound();titleView();}}]);
+}
+function helpView(){
+ view(`<h2>How to play</h2><div class="cols"><div>
+ <p>Pick a champion, buy supplies, and drive your wagon west. Watch food, health and oxen. Rivers must be crossed, illness must be treated, and anything that gets in your way must be punched.</p>
+ <p>Hunting is a fistfight with a bison. Sickness can be cured with medicine — or by beating the fever wraith in single combat. Three bosses guard the trail.</p>
+ <p>When an enemy staggers, you have five seconds. Hit them to win, or enter your champion's <span class="red">fatality</span> for glory and extra loot.</p></div>
+ <div class="ctrl"><kbd>← →</kbd><span>move (A / D)</span><kbd>↑</kbd><span>jump (W)</span><kbd>↓</kbd><span>block (S)</span><kbd>↓ + J</kbd><span>uppercut</span><kbd>J / Z</kbd><span>punch</span><kbd>K / X</kbd><span>kick (in the air: flying kick)</span><kbd>L / C</kbd><span>special move</span><kbd>1–9</kbd><span>pick menu options</span><kbd>Space</kbd><span>continue / stop the wagon</span></div></div>`,
+ [{t:'Back',f:titleView,sp:true}]);
+}
+function selectView(){
+ scene='select';
+ const c=CHAMPS[SEL],arr={F:'→',B:'←',D:'↓',P:'Punch',K:'Kick',S:'Special'};
+ const cards=CHAMPS.map((ch,i)=>`<button class="champ${i===SEL?' sel':''}" data-c="${i}"><b>${ch.name}</b>${ch.title}</button>`).join('');
+ view(`<div class="champs">${cards}</div><div class="cols"><div>
+ <h2>${c.name}</h2><p>${c.perk}</p>
+ <p><span class="dim">Starting cash</span> $${c.money} · <span class="dim">Score ×</span>${c.mult}</p></div><div>
+ <p><span class="dim">Power</span> ${'█'.repeat(Math.round(c.power*5))} <span class="dim">Speed</span> ${'█'.repeat(Math.round(c.speed*5))}</p>
+ <p><span class="dim">Special:</span> ${c.special.name}<br><span class="dim">Fatality:</span> <span class="red">${c.fatal.name}</span> ${c.fatal.seq.map(k=>`<kbd>${arr[k]}</kbd>`).join(' ')}</p></div></div>`,
+ [{t:`Ride with ${c.name}`,f:namesView,hot:true},{t:'Back',f:titleView}]);
+ panel.querySelectorAll('.champ').forEach(b=>b.addEventListener('click',()=>{SEL=+b.dataset.c;SFX.sel();selectView();}));
+}
+function namesView(){
+ const c=CHAMPS[SEL];const pool=[...NAMES].sort(()=>Math.random()-.5);
+ view(`<h2>Who rides with ${c.name}?</h2><p class="dim">Your champion leads the party. If they fall, the next survivor takes up the fight in the same style.</p>
+ <div class="names">${[0,1,2,3].map(i=>`<input class="nm" maxlength="12" value="${pool[i]}" aria-label="Companion ${i+1}">`).join('')}</div>`,
+ [{t:'Head to the general store',sp:true,hot:true,f:()=>{
+  const names=[...panel.querySelectorAll('input.nm')].map((x,i)=>x.value.trim()||pool[i]);
+  newGame(c,[c.name,...names]);storeView(1,"Old Sig's Mercantile",true,()=>{log('You set out from Independence, Missouri.');travelView('<b>The trail begins.</b> Press Space or pick “Continue on the trail”.',true);});}},{t:'Back',f:selectView}]);
+ setTimeout(()=>{const i=panel.querySelector('input.nm');i&&i.focus();},50);
+}
+function newGame(champ,names){
+ G={champ,party:names.map(n=>({name:n,hp:100,alive:true,sick:null,cause:null})),money:champ.money,food:0,oxen:0,meds:0,parts:0,miles:0,date:new Date(1848,3,1),pace:0,rations:0,next:1,log:[],kills:0,fatals:0,dead:[],moving:false,acc:0,scroll:0,beaten:{},river:null,block:null};
+}
+const ITEMS=[{k:'oxen',n:'Yoke of oxen (2 head)',p:40,u:2},{k:'food',n:'Food — 100 lb sack',p:20,u:100},{k:'meds',n:'Medicine kit',p:15,u:1},{k:'parts',n:'Spare wagon part',p:10,u:1}];
+function storeView(mult,title,first,done){
+ scene='travel';
+ const cart=first?{oxen:3,food:5,meds:2,parts:2}:{oxen:0,food:0,meds:0,parts:0};
+ const price=it=>Math.round(it.p*mult);
+ const render=()=>{
+  const total=ITEMS.reduce((s,it)=>s+cart[it.k]*price(it),0);
+  const ok=total<=G.money&&(G.oxen+cart.oxen*2>=2);
+  view(`<h2>${title}</h2>${first?`<p class="dim">Advice: at least 3 yoke of oxen, 500 lb of food, a few medicine kits and spare parts.</p>`:''}
+  <table class="store">${ITEMS.map(it=>`<tr><td>${it.n}</td><td class="dim">$${price(it)}</td><td class="q"><button data-a="-" data-k="${it.k}">−</button> ${cart[it.k]} <button data-a="+" data-k="${it.k}">+</button></td><td class="dim">have ${G[it.k]}</td></tr>`).join('')}</table>
+  <p>Bill: <span class="${total>G.money?'red':'gold'}">$${total}</span> · Cash: $${G.money}${G.oxen+cart.oxen*2<2?' · <span class="red">You need oxen to pull the wagon.</span>':''}</p>`,
+  [{t:total?`Pay $${total} and leave`:'Leave the store',sp:true,dis:!ok,hot:true,f:()=>{G.money-=total;for(const it of ITEMS)G[it.k]+=cart[it.k]*it.u;if(total)SFX.coin();done();}}]);
+  panel.querySelectorAll('table.store button').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k;cart[k]=Math.max(0,cart[k]+(b.dataset.a==='+'?1:-1));SFX.sel();render();}));
+ };render();
+}
+function partyHTML(){return G.party.map(p=>`<div class="pm${p.alive?'':' dead'}"><span class="nm">${esc(p.name)}${p===leader()?' <span class="gold">★</span>':''}</span>${p.alive?`<div class="hb"><i style="width:${Math.round(p.hp)}%;background:${hpCol(p.hp)}"></i></div><span class="st${p.sick?' sick':''}">${p.sick?esc(p.sick):hpWord(p.hp)}</span>`:`<span class="st">${esc(p.cause)}</span><span></span>`}</div>`).join('');}
+function mapHTML(){
+ const pct=m=>(m/TOTAL*100).toFixed(2);
+ return `<div class="map" title="Map"><div class="track"></div><div class="done" style="width:${pct(G.miles)}%"></div>${MARKS.map(m=>`<div class="lm${m.boss?' boss':''}${m.m<=G.miles?' past':''}" style="left:${pct(m.m)}%" title="${m.n}"></div>`).join('')}<div class="wg" style="left:${pct(G.miles)}%">🐂</div></div>`;
+}
+function statsHTML(){const m=MARKS[G.next];return `<div class="stats">
+ <div><b>Next:</b> ${m.n}</div><div><b>Distance:</b> ${m.m-G.miles} mi</div>
+ <div><b>Food:</b> <span class="${G.food<60?'red':''}">${Math.round(G.food)} lb</span></div><div><b>Cash:</b> $${G.money}</div>
+ <div><b>Pace:</b> ${PACE[G.pace]}</div><div><b>Rations:</b> ${RAT[G.rations]}</div>
+ <div><b>Oxen:</b> ${G.oxen}</div><div><b>Meds:</b> ${G.meds} · <b>Parts:</b> ${G.parts}</div></div>`;}
+function logHTML(){return `<div class="log">${G.log.slice(-4).map(l=>`<div>${l}</div>`).join('')}</div>`;}
+function travelView(note,good){
+ scene='travel';G.moving=false;
+ const anySick=alive().some(p=>p.sick);
+ view(`<div class="cols"><div>${mapHTML().replace('class="map"','class="map" id="tmap"')}<div id="tstats">${statsHTML()}</div><div class="party" id="tparty">${partyHTML()}</div></div>
+ <div>${note?`<div class="note${good?' good':''}">${note}</div>`:''}<div id="tlog">${logHTML()}</div><div id="topts"></div></div></div>`);
+ const opts=[{t:'Continue on the trail',sp:true,hot:true,f:goTrail},{t:'Hunt for food <span class="dim">(fight)</span>',f:hunt},{t:'Rest',f:restView},{t:`Change pace <span class="dim">(${PACE[G.pace]})</span>`,f:paceView},{t:`Change rations <span class="dim">(${RAT[G.rations]})</span>`,f:rationView},{t:`Use medicine <span class="dim">(${G.meds})</span>`,dis:!anySick||!G.meds,f:medView}];
+ document.getElementById('topts').innerHTML=optsHTML(opts);
+}
+function updTravelStats(){const a=document.getElementById('tstats');if(!a)return;a.innerHTML=statsHTML();document.getElementById('tparty').innerHTML=partyHTML();document.getElementById('tlog').innerHTML=logHTML();const m=document.getElementById('tmap');if(m)m.outerHTML=mapHTML().replace('class="map"','class="map" id="tmap"');}
+function goTrail(){
+ if(G.block){const b=G.block;if(b.boss&&!G.beaten[b.boss])bossView(b);else riverView(b);return;}
+ G.moving=true;G.acc=DAY*.6;
+ document.getElementById('topts').innerHTML=optsHTML([{t:'Stop and size up the situation',sp:true,f:()=>{G.moving=false;travelView();}}]);
+ const n=document.querySelector('.note');if(n)n.remove();
+}
+function milesPerDay(){
+ const ox=G.oxen<=0?.25:clamp(.45+G.oxen*.09,.45,1);
+ let m=[15,20,26][G.pace]*ox*Rn(.85,1.15);
+ if((G.miles>880&&G.miles<1000)||(G.miles>1580&&G.miles<1760))m*=.75;
+ return Math.max(3,Math.round(m));
+}
+function healthTick(resting){
+ const al=alive();const out={sick:[],dead:[]};if(!al.length)return out;
+ const need=al.length*[2,1.5,1][G.rations];let starving=false;
+ if(G.food>=need)G.food-=need;else{G.food=0;starving=true;}
+ for(const p of al){
+  let d=resting?5:.5;
+  let neg=[.8,0,-1.5][G.rations]+(resting?0:[0,-1.2,-2.8][G.pace])+(starving?-6:0);
+  if(neg<0&&G.champ.key==='ezekiel')neg*=.5;
+  d+=neg;
+  if(p.sick){d-=resting?1.5:Rn(3,5.5);if(Math.random()<(resting?.3:.07)){log(`${esc(p.name)} has recovered from ${p.sick}.`);p.sick=null;}}
+  else{let ch=.008+(G.rations===2?.01:0)+(G.pace===2?.01:0)+(p.hp<50?.012:0)+(starving?.03:0);if(resting)ch*=.3;if(Math.random()<ch){p.sick=pick(DISEASES);out.sick.push(p);}}
+  p.hp=clamp(p.hp+d,0,100);
+  if(p.hp<=0){p.alive=false;p.cause=p.sick||(starving?'starvation':'exhaustion');out.dead.push(p);G.dead.push(p);}
+ }
+ if(starving)log('<span class="red">You have run out of food!</span>');
+ return out;
+}
+function passDay(resting){G.date.setDate(G.date.getDate()+1);return healthTick(resting);}
+function handleHealth(h,after){
+ if(h.dead.length){const p=h.dead[0];log(`<span class="red">${esc(p.name)} has died of ${p.cause}.</span>`);graveView(p,()=>{if(h.dead.length>1)handleHealth({dead:h.dead.slice(1),sick:[]},after);else after();});return true;}
+ if(h.sick.length){sickView(h.sick[0]);return true;}
+ return false;
+}
+function dayTick(){
+ const h=passDay(false);
+ if(handleHealth(h,()=>travelView()))return true;
+ if(Math.random()<.004+(G.pace===2?.006:0)&&G.oxen>0){G.oxen--;log('One of your oxen has died.');}
+ const mv=milesPerDay();const nm=MARKS[G.next];
+ if(G.miles+mv>=nm.m){G.miles=nm.m;arrive();return true;}
+ G.miles+=mv;
+ if(Math.random()<.13){randomEvent();return true;}
+ return false;
+}
+function graveView(p,after){
+ G.moving=false;scene='grave';GRAVE={name:p.name,cause:p.cause};SFX.bad();
+ if(!alive().length){view(`<h2 class="red">${esc(p.name)} has died of ${p.cause}.</h2><p>No one is left to carry on.</p>`,[{t:'Continue',sp:true,f:gameOver}]);return;}
+ const L=leader();
+ view(`<h2 class="red">${esc(p.name)} has died of ${p.cause}.</h2><p>You bury them beside the trail. ${esc(L.name)} now leads the party${L!==G.party[0]?` and fights in the style of ${G.champ.name}`:''}.</p>`,[{t:'Continue',sp:true,f:()=>{scene='travel';after();}}]);
+}
+function sickView(p){
+ G.moving=false;scene='travel';SFX.bad();
+ const isLeader=p===leader();
+ view(`<h2 class="red">${esc(p.name)} has ${p.sick}.</h2><p>${isLeader?`Your champion is sick. Fighting the wraith will be harder.`:`A fever-wraith of ${p.sick} hovers over ${esc(p.name)}'s bedroll. Only you can see it.`}</p>`,
+ [{t:`Use medicine <span class="dim">(${G.meds} left)</span>`,dis:!G.meds,f:()=>{const r=useMed(p);travelView(r,true);}},
+  {t:`Battle the ${p.sick} wraith <span class="dim">(fight)</span>`,hot:true,f:()=>startFight('wraith',{name:(p.sick.length>11?'FEVER':p.sick.replace('the ','').toUpperCase())+' WRAITH',bg:'night',intro:`Win and ${esc(p.name)}'s fever breaks.`},(won,fatal)=>{
+   if(won){p.sick=null;p.hp=clamp(p.hp+15+(fatal?15:0),0,100);log(`${esc(p.name)}'s fever breaks.`);travelView(`You beat the wraith. <b>${esc(p.name)} is cured</b>${fatal?' and feels better than ever':''}.`,true);}
+   else{p.hp-=35;if(p.hp<=0){p.alive=false;p.cause=p.sick;G.dead.push(p);handleHealth({dead:[p],sick:[]},()=>travelView());}else travelView(`The wraith wins. ${esc(p.name)} gets worse.`);}
+  })},
+  {t:'Press on and hope',f:()=>travelView()}]);
+}
+function useMed(p){
+ G.meds--;
+ if(G.champ.key==='hattie'||Math.random()<.75){p.sick=null;p.hp=clamp(p.hp+(G.champ.key==='hattie'?25:10),0,100);SFX.good();log(`${esc(p.name)} takes medicine and recovers.`);return `${esc(p.name)} is cured.`;}
+ log(`The medicine did not help ${esc(p.name)}.`);return `The medicine did not help ${esc(p.name)}.`;
+}
+function medView(){
+ const sick=alive().filter(p=>p.sick);
+ view(`<h2>Use medicine</h2><p>${G.meds} kit${G.meds===1?'':'s'} left. Who gets one?</p>`,[...sick.map(p=>({t:`${esc(p.name)} <span class="dim">(${p.sick}, ${hpWord(p.hp)})</span>`,f:()=>travelView(useMed(p),true)})),{t:'Back',sp:true,f:()=>travelView()}]);
+}
+function paceView(){view(`<h2>Change pace</h2><p class="dim">Faster is harder on everyone.</p>`,[...PACE.map((p,i)=>({t:p+(i===G.pace?' ✓':''),f:()=>{G.pace=i;travelView();}})),{t:'Back',sp:true,f:()=>travelView()}]);}
+function rationView(){view(`<h2>Change rations</h2><p class="dim">Filling: 2 lb/person/day · Meager: 1.5 · Bare bones: 1</p>`,[...RAT.map((p,i)=>({t:p+(i===G.rations?' ✓':''),f:()=>{G.rations=i;travelView();}})),{t:'Back',sp:true,f:()=>travelView()}]);}
+function restView(){view(`<h2>Rest</h2><p class="dim">Resting heals the party and helps the sick, but eats food.</p>`,[...[1,2,3,5].map(n=>({t:`Rest ${n} day${n>1?'s':''}`,f:()=>doRest(n)})),{t:'Back',sp:true,f:()=>travelView()}]);}
+function doRest(n,after){
+ for(let i=0;i<n;i++){const h=passDay(true);if(h.dead.length||h.sick.length){if(handleHealth(h,()=>after?after():travelView()))return;}}
+ log(`You rested ${n} day${n>1?'s':''}.`);after?after():travelView(`The party rests for ${n} day${n>1?'s':''}.`,true);
+}
+function hunt(){
+ const r=Math.random();const key=r<.5?'bison':r<.8?'wolf':'grizzly';
+ const intro={bison:'A bison bull lowers its head. Dinner is looking for a fight.',wolf:'A lone wolf circles. It is not much meat, but it is hungry too.',grizzly:'You went looking for deer. You found a grizzly.'}[key];
+ startFight(key,{intro},(won,fatal)=>{
+  const h=passDay(false);
+  let msg;
+  if(won){const base={bison:[160,240],wolf:[30,60],grizzly:[200,300]}[key];let food=RI(base[0],base[1]);if(fatal)food=Math.round(food*1.5);G.food+=food;SFX.good();msg=`You bring back <b>${food} lb</b> of meat${fatal?' (very finely tenderized)':''}.`;log(`Hunting: +${food} lb food.`);}
+  else{const v=pick(alive());v.hp=Math.max(1,v.hp-15);msg=`The ${FOES[key].name.toLowerCase()} got away, and you limp back empty-handed.`;log('The hunt failed.');}
+  if(!handleHealth(h,()=>travelView(msg,won)))travelView(msg,won);
+ });
+}
+const EVENTS=[
+ {w:3,f:evBandits},{w:1.4,f:evJumper,min:500},{w:1,f:evSnakeoil},{w:1.8,f:evWolves},{w:1,f:evGrizzly,min:300},
+ {w:2,f:evBroken},{w:1,f:evOx},{w:1.3,f:evThief},{w:1.3,f:evWagon},{w:1,f:evBerries},{w:1,f:evBadWater},{w:1.2,f:evStorm}];
+function randomEvent(){
+ G.moving=false;
+ const pool=EVENTS.filter(e=>!e.min||G.miles>=e.min);const tot=pool.reduce((s,e)=>s+e.w,0);let r=Math.random()*tot;
+ for(const e of pool){r-=e.w;if(r<=0){e.f();return;}}pool[0].f();
+}
+function evBandits(){
+ const toll=Math.max(10,Math.round(G.money*.15));
+ const o=[{t:'Fight',hot:true,f:()=>startFight('bandit',{intro:'Road agents want your cash. Their leader steps forward.'},(won,fatal)=>{
+  if(won){const loot=RI(15,50)*(fatal?2:1);G.money+=loot;SFX.coin();log(`You beat the road agents. +$${loot}.`);travelView(`The road agents scatter${fatal?' — what is left of their leader does not':''}. You take <b>$${loot}</b> from their saddlebags.`,true);}
+  else{const m=Math.round(G.money*.25),fd=Math.round(G.food*.2);G.money-=m;G.food-=fd;log(`Robbed: -$${m}, -${fd} lb food.`);travelView(`The road agents take <b>$${m}</b> and <b>${fd} lb</b> of food.`);}
+ })},{t:`Pay the $${toll} toll`,dis:G.money<toll,f:()=>{G.money-=toll;log(`Paid road agents $${toll}.`);travelView(`You pay $${toll}. They tip their hats.`);}}];
+ if(G.champ.key==='cutter'&&leader()===G.party[0])o.push({t:'Bluff <span class="dim">(Cutter)</span>',f:()=>{if(Math.random()<.55){log('Cutter bluffs past the road agents.');travelView('Cutter flashes four aces and a derringer. The road agents decide they have somewhere else to be.',true);}else{view(`<h2 class="red">They call your bluff.</h2>`,[{t:'Fight',sp:true,f:o[0].f}]);}}});
+ view(`<h2 class="red">Road agents!</h2><p>Masked riders block the trail. “Your money or your teeth.”</p>`,o);
+}
+function evJumper(){view(`<h2 class="red">Claim jumper!</h2><p>A wild-eyed miner swears your wagon is parked on his claim. He is holding a pickaxe.</p>`,
+ [{t:'Fight',hot:true,f:()=>startFight('jumper',{},(won,fatal)=>{if(won){const p=RI(1,2),g=RI(20,60)*(fatal?2:1);G.parts+=p;G.money+=g;SFX.coin();log(`Beat the claim jumper: +$${g}, +${p} parts.`);travelView(`He had <b>$${g}</b> in gold dust and <b>${p}</b> wagon part${p>1?'s':''}.`,true);}else{const fd=Math.min(G.food,RI(40,80));G.food-=fd;log(`Claim jumper took ${fd} lb food.`);travelView(`He takes ${fd} lb of food as “rent”.`);}})},
+  {t:'Drive around him <span class="dim">(lose a day)</span>',f:()=>{const h=passDay(false);if(!handleHealth(h,()=>travelView()))travelView('You take the long way around.');}}]);}
+function evSnakeoil(){
+ view(`<h2>A traveling salesman</h2><p>“Doc Venom's Miracle Tonic! Cures fever, fatigue and fallen arches. Only twenty dollars.”</p>`,
+ [{t:'Buy a bottle ($20)',dis:G.money<20,f:()=>{G.money-=20;const p=pick(alive());if(Math.random()<.5){p.sick=null;p.hp=clamp(p.hp+20,0,100);travelView(`${esc(p.name)} drinks it and feels wonderful.`,true);}else{p.sick='tonic poisoning';travelView(`${esc(p.name)} drinks it and turns green. The doctor is already gone.`);}}},
+  {t:'Call him a fraud <span class="dim">(fight)</span>',hot:true,f:()=>startFight('snakeoil',{intro:'“Fraud? Sir, I am a man of science!” He rolls up his sleeves.'},(won,fatal)=>{if(won){G.meds+=2;G.money+=fatal?40:15;SFX.coin();log('Beat Doc Venom: +2 medicine.');travelView(`You take two crates of something that actually is medicine (<b>+2 kits</b>)${fatal?' and his cash box (+$40)':' and $15'}.`,true);}else{const m=Math.min(G.money,30);G.money-=m;travelView(`He knocks you flat and charges you $${m} for the “consultation”.`);}})},
+  {t:'Ignore him',f:()=>travelView()}]);
+}
+function evWolves(){view(`<h2 class="red">Wolves!</h2><p>Yellow eyes in the dark. The biggest one walks right up to the fire.</p>`,
+ [{t:'Fight the pack leader',hot:true,f:()=>startFight('wolf',{name:'Pack Leader',bg:'night'},(won,fatal)=>{if(won){const fd=RI(30,60);G.food+=fd;travelView(`The pack flees. You get <b>${fd} lb</b> of meat from the leader.`,true);}else{const fd=Math.min(G.food,RI(50,100));G.food-=fd;travelView(`The wolves raid the food wagon: -${fd} lb.`);}})},
+  {t:'Throw them some meat (-40 lb)',dis:G.food<40,f:()=>{G.food-=40;travelView('The wolves take the meat and leave.');}}]);}
+function evGrizzly(){view(`<h2 class="red">Grizzly!</h2><p>A grizzly stands up on the trail ahead. It is taller than your wagon.</p>`,
+ [{t:'Fight it',hot:true,f:()=>startFight('grizzly',{},(won,fatal)=>{if(won){const fd=RI(180,260);G.food+=fd;travelView(`You win. <b>${fd} lb</b> of bear meat, and a story nobody will believe.`,true);}else{const v=pick(alive());v.hp=Math.max(1,v.hp-25);travelView(`The bear mauls ${esc(v.name)} and wanders off.`);}})},
+  {t:'Run for it',f:()=>{if(Math.random()<.5)travelView('You whip the oxen and get away.',true);else{const v=pick(alive());v.hp=Math.max(1,v.hp-20);travelView(`${esc(v.name)} is clawed while fleeing.`);}}}]);}
+function evBroken(){
+ const part=pick(['wagon wheel','wagon axle','wagon tongue']);
+ if(G.champ.key==='josiah'&&leader()===G.party[0]&&Math.random()<.5){log(`Josiah forged a new ${part}.`);travelView(`A ${part} broke. Iron Josiah forges a new one at the campfire.`,true);return;}
+ if(G.parts>0){G.parts--;log(`Replaced a broken ${part}.`);travelView(`A ${part} broke. You replace it with a spare part.`);return;}
+ const d=RI(2,4);let h={dead:[],sick:[]};for(let i=0;i<d;i++){const x=passDay(false);h.dead.push(...x.dead);h.sick.push(...x.sick);}
+ log(`Lost ${d} days repairing a ${part}.`);
+ if(!handleHealth(h,()=>travelView()))travelView(`A ${part} broke and you have no spares. You lose ${d} days jury-rigging it.`);
+}
+function evOx(){if(G.oxen>0){G.oxen--;log('An ox has died.');travelView(`One of your oxen has died. You have ${G.oxen} left.`);}else travelView('Nothing happens. Suspiciously.');}
+function evThief(){const what=pick(['food','meds','parts','money']);let s;
+ if(what==='food'){const n=Math.min(G.food,RI(30,90));G.food-=n;s=`${n} lb of food`;}else if(what==='meds'&&G.meds){G.meds--;s='a medicine kit';}else if(what==='parts'&&G.parts){G.parts--;s='a wagon part';}else{const n=Math.min(G.money,RI(10,40));G.money-=n;s=`$${n}`;}
+ log(`A thief stole ${s}.`);travelView(`A thief comes in the night and steals ${s}.`);}
+function evWagon(){const f=RI(30,90),p=Math.random()<.5?1:0;G.food+=f;G.parts+=p;log(`Found an abandoned wagon: +${f} lb food.`);travelView(`You find an abandoned wagon: <b>${f} lb</b> of food${p?' and a spare part':''}.`,true);}
+function evBerries(){const f=RI(15,40);G.food+=f;travelView(`You find wild berries: +${f} lb of food.`,true);}
+function evBadWater(){const p=pick(alive());p.hp=Math.max(1,p.hp-12);travelView(`Bad water. ${esc(p.name)} is sick to their stomach.`);}
+function evStorm(){const k=pick(['A violent thunderstorm','Heavy fog','A hailstorm']);const h=passDay(false);if(!handleHealth(h,()=>travelView()))travelView(`${k}. You lose a day.`);}
+
+// ---------- Landmarks ----------
+function arrive(){
+ G.moving=false;const m=MARKS[G.next];G.at=G.next;G.next++;
+ log(`You arrive at ${m.n}.`);
+ if(m.t==='river'||(m.boss&&!G.beaten[m.boss]))G.block=m;
+ if(m.t==='end'){victory();return;}
+ if(m.boss&&!G.beaten[m.boss]){bossView(m);return;}
+ landmarkView(m);
+}
+function landmarkView(m,note){
+ scene='travel';
+ if(m.t==='river'){riverView(m);return;}
+ if(m.t==='fort'){fortView(m,note);return;}
+ const desc=m.desc||(m.t==='pass'?'The Continental Divide. From here, the rivers run to the Pacific.':m.t==='mtn'?'Steep switchbacks and dark pine. The Columbia lies beyond.':m.n==='The Dalles'?'The trail ends at the Columbia River. Oregon City is a raft ride away.':'');
+ view(`${note?`<div class="note good">${note}</div>`:''}<h2>${m.n}</h2><p>${desc}</p><p class="dim">${fmtDate(G.date)}</p>`,[{t:'Continue on the trail',sp:true,hot:true,f:()=>{travelView();goTrail();}},{t:'Rest here',f:()=>restView()},{t:'Back to the wagon',f:()=>travelView()}]);
+}
+function fortView(m,note){
+ const idx=MARKS.filter(x=>x.t==='fort').indexOf(m);const mult=1+.25*(idx+1);
+ view(`${note?`<div class="note${note.good?' good':''}">${note.t||note}</div>`:''}<h2>${m.n}</h2><p>A trading post with high prices and loud opinions.</p>`,
+ [{t:'Continue on the trail',sp:true,hot:true,f:()=>{travelView();goTrail();}},{t:'Buy supplies',f:()=>storeView(mult,`${m.n} — trading post`,false,()=>fortView(m))},{t:'Talk to people',f:()=>fortView(m,{t:pick(TIPS)})},{t:'Rest here',f:()=>restView()}]);
+}
+function riverView(m){
+ if(!G.river||G.river.at!==m.n)G.river={at:m.n,depth:+Rn(m.depth[0],m.depth[1]).toFixed(1),width:RI(m.width[0],m.width[1])};
+ const r=G.river;
+ const o=[{t:'Attempt to ford the river',f:()=>cross('ford')},{t:'Caulk the wagon and float it across',f:()=>cross('float')}];
+ if(m.ferry)o.push({t:`Take a ferry ($${m.ferry})`,dis:G.money<m.ferry,f:()=>{G.money-=m.ferry;G.block=null;const d=RI(1,3);let msg=`You wait ${d} day${d>1?'s':''} and the ferry takes you safely across.`;for(let i=0;i<d;i++){const h=passDay(false);if(handleHealth(h,()=>travelView(msg,true)))return;}travelView(msg,true);}});
+ if(m.guide)o.push({t:`Hire a local guide ($${m.guide})`,dis:G.money<m.guide,f:()=>{G.money-=m.guide;G.block=null;travelView('A guide leads you across a safe crossing.',true);}});
+ o.push({t:'Wait a day to see if conditions improve',f:()=>{const h=passDay(true);r.depth=+clamp(r.depth+Rn(-.6,.4),1,9).toFixed(1);if(!handleHealth(h,()=>riverView(m)))riverView(m);}});
+ view(`<h2>${m.n}</h2><p>The river is <b>${r.width} feet</b> across and <b>${r.depth} feet</b> deep${r.depth>3?' — <span class="red">too deep to ford safely</span>':''}.</p>`,o);
+}
+function cross(how){
+ const r=G.river;let bad=0;
+ if(how==='ford')bad=r.depth<2.5?0:r.depth<3.5?.35:.7;
+ else bad=r.depth<1.5?.5:.2;
+ if(how==='float'&&r.depth<1.5&&Math.random()<bad){const h=passDay(false);if(!handleHealth(h,()=>travelView()))travelView('The river is too shallow to float. You get stuck in the mud and lose a day.');return;}
+ G.block=null;
+ if(Math.random()>=bad){log('You crossed the river.');travelView('You make it across safely.',true);return;}
+ const fd=Math.round(G.food*Rn(.15,.35)),md=Math.min(G.meds,RI(0,1)),pt=Math.min(G.parts,RI(0,1));G.food-=fd;G.meds-=md;G.parts-=pt;
+ let msg=`The wagon tips over! You lose ${fd} lb of food${md?', a medicine kit':''}${pt?', a spare part':''}.`;
+ const others=alive().filter(p=>p!==leader());
+ if(others.length&&Math.random()<(how==='ford'?.18:.08)){const v=pick(others);v.alive=false;v.cause='drowning';v.hp=0;G.dead.push(v);log(`<span class="red">${esc(v.name)} has drowned.</span>`);SFX.bad();graveView(v,()=>travelView(msg));return;}
+ SFX.bad();log('Lost supplies in the river.');travelView(msg);
+}
+const BOSS={
+ varney:{intro:'A dandy in a silk top hat steps out from the rocks, flanked by a dozen gunmen. “Gentleman Jack Varney, at your service. Nobody crosses my pass without paying the toll — or proving they deserve to.” He hands his rifle to a crony and rolls up his sleeves.',toll:true},
+ scratch:{intro:'The pines go silent. Something enormous is following the wagon. Old Scratch, the man-eating grizzly of the Blue Mountains, steps onto the trail. There is no going around him.'},
+ dysentery:{intro:'The Columbia is in sight. Then the air turns foul. A bloated, crowned specter rises from the latrine pits of a thousand camps: LORD DYSENTERY, killer of emigrants. “Every wagon pays me in the end.”'},
+};
+function bossView(m,note){
+ scene='travel';const b=BOSS[m.boss],L=leader();
+ const o=[{t:`Fight ${FOES[m.boss].name}`,hot:true,f:()=>bossFight(m)},{t:'Make camp and rest first <span class="dim">(1 day)</span>',f:()=>doRest(1,()=>bossView(m,'You rest. The boss waits. They always wait.'))}];
+ if(b.toll){const toll=Math.max(50,Math.round(G.money*.5));o.push({t:`Pay Varney's toll ($${toll})`,dis:G.money<toll,f:()=>{G.money-=toll;G.beaten.varney=true;G.block=null;log(`Paid Varney $${toll}.`);landmarkView(m,'Varney pockets the cash. “A pleasure.”');}});}
+ view(`${note?`<div class="note">${note}</div>`:''}<h2 class="red">${m.n}</h2><p>${b.intro}</p><p class="dim">${esc(L.name)}: ${hpWord(L.hp)} health (${Math.round(L.hp)}/100). ${L.hp<60?'<span class="red">You might want to rest first.</span>':''}</p>`,o);
+}
+function bossFight(m){
+ const key=m.boss,bg=key==='dysentery'?'hell':undefined;
+ startFight(key,{bg,intro:key==='dysentery'?'The final battle of the Oregon Trail.':''},(won,fatal)=>{
+  const L=leader();
+  if(won){G.beaten[key]=true;G.block=null;const g=key==='varney'?150:key==='scratch'?60:200,fd=key==='scratch'?300:key==='dysentery'?0:50;G.money+=g*(fatal?2:1);G.food+=fd;SFX.good();
+   log(`<span class="gold">Defeated ${FOES[key].name}!</span>`);
+   const msg={varney:`Varney's gang carries him off. You claim his strongbox: <b>$${g*(fatal?2:1)}</b>.`,scratch:`Old Scratch will eat no more emigrants. <b>${fd} lb</b> of meat.`,dysentery:`Lord Dysentery is destroyed. Nobody will ever die of dysentery again. (Probably.)`}[key];
+   landmarkView(m,msg);return;}
+  if(key==='varney'){const lost=Math.round(G.money*.5);G.money-=lost;L.hp=5;G.beaten.varney=true;G.block=null;log(`Varney took $${lost}.`);landmarkView(m,`Varney admires your grit, takes <b>$${lost}</b>, and lets you limp through the pass.`);return;}
+  L.alive=false;L.hp=0;L.cause=key==='scratch'?'being eaten by a bear':'dysentery';G.dead.push(L);log(`<span class="red">${esc(L.name)} has died of ${L.cause}.</span>`);
+  graveView(L,()=>bossView(m,`${esc(L.name)} is gone. ${FOES[key].name} still blocks the way.`));
+ });
+}
+function score(){const al=alive();return Math.round((al.length*500+al.reduce((s,p)=>s+p.hp,0)*2+G.food/2+G.money+G.fatals*150+G.kills*40+G.oxen*20)*G.champ.mult);}
+function victory(){
+ scene='won';sceneT=0;SFX.good();const s=score();let nb=false;if(s>best){best=s;nb=true;try{localStorage.setItem('mortalTrailBest',s);}catch(e){}showBest();}
+ const al=alive();
+ view(`<h2>You made it to the Willamette Valley!</h2><p>${fmtDate(G.date)}. ${al.length} of 5 survived: ${al.map(p=>esc(p.name)).join(', ')}.</p>
+ <p><span class="dim">Foes beaten:</span> ${G.kills} · <span class="dim">Fatalities:</span> ${G.fatals} · <span class="dim">Food left:</span> ${Math.round(G.food)} lb · <span class="dim">Cash:</span> $${G.money}</p>
+ <p class="gold">Score: ${s} <span class="dim">(×${G.champ.mult} for ${G.champ.name})</span>${nb?' — <span class="red">new best!</span>':''}</p>`,[{t:'Play again',sp:true,f:()=>{G=null;titleView();}}]);
+}
+function gameOver(){
+ scene='over';sceneT=0;SFX.bad();
+ view(`<h2 class="red">Your party has perished on the trail.</h2><p>${G.party.map(p=>`${esc(p.name)} — ${p.cause}`).join('<br>')}</p><p class="dim">You made it ${G.miles} miles. ${G.kills} foes beaten, ${G.fatals} fatalities.</p>`,[{t:'Try again',sp:true,f:()=>{G=null;titleView();}}]);
+}
+
+// ======================================================================
+titleView();
+requestAnimationFrame(loop);
+if(document.fonts&&document.fonts.load){document.fonts.load('8px "Press Start 2P"').catch(()=>{});}
+</script>
+</body>
+</html>
